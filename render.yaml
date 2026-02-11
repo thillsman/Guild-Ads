@@ -1,0 +1,38 @@
+# Render Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  # API Server
+  - type: web
+    name: guild-ads-api
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: pnpm install && pnpm build:api
+    startCommand: node apps/api/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+    healthCheckPath: /health
+
+  # Web Dashboard (Next.js)
+  - type: web
+    name: guild-ads-web
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: pnpm install && pnpm build:web
+    startCommand: node apps/web/.next/standalone/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
