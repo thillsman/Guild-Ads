@@ -44,36 +44,92 @@ export type Database = {
         }
         Relationships: []
       }
-      apps: {
+      app_tokens: {
         Row: {
           app_id: string
-          bundle_identifier: string
           created_at: string
+          last_used_at: string | null
           name: string
-          platform: string
-          publisher_id: string
-          status: string
-          updated_at: string
+          revoked_at: string | null
+          token_hash: string
+          token_id: string
+          user_id: string
         }
         Insert: {
-          app_id?: string
-          bundle_identifier: string
+          app_id: string
           created_at?: string
-          name: string
-          platform?: string
-          publisher_id: string
-          status?: string
-          updated_at?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          token_hash: string
+          token_id?: string
+          user_id: string
         }
         Update: {
           app_id?: string
+          created_at?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_tokens_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["app_id"]
+          },
+        ]
+      }
+      apps: {
+        Row: {
+          app_id: string
+          app_store_id: string | null
+          app_store_url: string | null
+          bundle_identifier: string
+          created_at: string
+          icon_url: string | null
+          name: string
+          platform: string
+          publisher_id: string | null
+          status: string
+          subtitle: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          app_id?: string
+          app_store_id?: string | null
+          app_store_url?: string | null
+          bundle_identifier: string
+          created_at?: string
+          icon_url?: string | null
+          name: string
+          platform?: string
+          publisher_id?: string | null
+          status?: string
+          subtitle?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          app_id?: string
+          app_store_id?: string | null
+          app_store_url?: string | null
           bundle_identifier?: string
           created_at?: string
+          icon_url?: string | null
           name?: string
           platform?: string
-          publisher_id?: string
+          publisher_id?: string | null
           status?: string
+          subtitle?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
