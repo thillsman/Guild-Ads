@@ -1,16 +1,5 @@
 services:
   - type: web
-    name: guild-ads-api
-    runtime: node
-    buildCommand: pnpm install && pnpm build:api
-    startCommand: pnpm --filter @guild-ads/api start
-    envVars:
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-
-  - type: web
     name: guild-ads-web
     runtime: node
     buildCommand: pnpm install && pnpm build:web
@@ -22,5 +11,3 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: GUILD_ADS_API_URL
-        value: https://guild-ads-api.onrender.com
