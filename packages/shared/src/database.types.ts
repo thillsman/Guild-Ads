@@ -14,35 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
-      advertisers: {
+      ad_requests: {
         Row: {
-          advertiser_id: string
-          billing_customer_id: string | null
+          app_id: string
+          campaign_id: string | null
+          clicked: boolean
+          clicked_at: string | null
           created_at: string
-          name: string
-          status: string
-          updated_at: string
-          user_id: string | null
+          device_id_hash: string | null
+          locale: string | null
+          os_version: string | null
+          request_id: string
+          response_type: string
+          sdk_version: string | null
         }
         Insert: {
-          advertiser_id?: string
-          billing_customer_id?: string | null
+          app_id: string
+          campaign_id?: string | null
+          clicked?: boolean
+          clicked_at?: string | null
           created_at?: string
-          name: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
+          device_id_hash?: string | null
+          locale?: string | null
+          os_version?: string | null
+          request_id?: string
+          response_type: string
+          sdk_version?: string | null
         }
         Update: {
-          advertiser_id?: string
-          billing_customer_id?: string | null
+          app_id?: string
+          campaign_id?: string | null
+          clicked?: boolean
+          clicked_at?: string | null
           created_at?: string
-          name?: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
+          device_id_hash?: string | null
+          locale?: string | null
+          os_version?: string | null
+          request_id?: string
+          response_type?: string
+          sdk_version?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ad_requests_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "ad_requests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["campaign_id"]
+          },
+        ]
       }
       app_tokens: {
         Row: {
@@ -95,7 +122,6 @@ export type Database = {
           icon_url: string | null
           name: string
           platform: string
-          publisher_id: string | null
           status: string
           subtitle: string | null
           updated_at: string
@@ -110,7 +136,6 @@ export type Database = {
           icon_url?: string | null
           name: string
           platform?: string
-          publisher_id?: string | null
           status?: string
           subtitle?: string | null
           updated_at?: string
@@ -125,474 +150,56 @@ export type Database = {
           icon_url?: string | null
           name?: string
           platform?: string
-          publisher_id?: string | null
           status?: string
           subtitle?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "apps_publisher_id_fkey"
-            columns: ["publisher_id"]
-            isOneToOne: false
-            referencedRelation: "publishers"
-            referencedColumns: ["publisher_id"]
-          },
-        ]
-      }
-      assets: {
-        Row: {
-          asset_id: string
-          bytes: number | null
-          created_at: string
-          creative_id: string
-          height: number | null
-          mime_type: string | null
-          sha256: string | null
-          type: string
-          url: string
-          width: number | null
-        }
-        Insert: {
-          asset_id?: string
-          bytes?: number | null
-          created_at?: string
-          creative_id: string
-          height?: number | null
-          mime_type?: string | null
-          sha256?: string | null
-          type: string
-          url: string
-          width?: number | null
-        }
-        Update: {
-          asset_id?: string
-          bytes?: number | null
-          created_at?: string
-          creative_id?: string
-          height?: number | null
-          mime_type?: string | null
-          sha256?: string | null
-          type?: string
-          url?: string
-          width?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assets_creative_id_fkey"
-            columns: ["creative_id"]
-            isOneToOne: false
-            referencedRelation: "creatives"
-            referencedColumns: ["creative_id"]
-          },
-        ]
-      }
-      bundle_placements: {
-        Row: {
-          added_at: string
-          bundle_id: string
-          placement_id: string
-          status: string
-        }
-        Insert: {
-          added_at?: string
-          bundle_id: string
-          placement_id: string
-          status?: string
-        }
-        Update: {
-          added_at?: string
-          bundle_id?: string
-          placement_id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bundle_placements_bundle_id_fkey"
-            columns: ["bundle_id"]
-            isOneToOne: false
-            referencedRelation: "bundles"
-            referencedColumns: ["bundle_id"]
-          },
-          {
-            foreignKeyName: "bundle_placements_placement_id_fkey"
-            columns: ["placement_id"]
-            isOneToOne: false
-            referencedRelation: "placements"
-            referencedColumns: ["placement_id"]
-          },
-        ]
-      }
-      bundles: {
-        Row: {
-          base_weekly_price_cents: number
-          bundle_id: string
-          created_at: string
-          description: string | null
-          name: string
-          price_ceiling_cents: number | null
-          price_floor_cents: number | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          base_weekly_price_cents: number
-          bundle_id?: string
-          created_at?: string
-          description?: string | null
-          name: string
-          price_ceiling_cents?: number | null
-          price_floor_cents?: number | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          base_weekly_price_cents?: number
-          bundle_id?: string
-          created_at?: string
-          description?: string | null
-          name?: string
-          price_ceiling_cents?: number | null
-          price_floor_cents?: number | null
-          status?: string
-          updated_at?: string
-        }
         Relationships: []
       }
       campaigns: {
         Row: {
-          advertiser_id: string
-          bundle_id: string
+          app_id: string | null
+          body: string | null
           campaign_id: string
           created_at: string
-          creative_id: string
+          cta_text: string | null
+          destination_url: string | null
+          headline: string | null
           name: string
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
-          advertiser_id: string
-          bundle_id: string
+          app_id?: string | null
+          body?: string | null
           campaign_id?: string
           created_at?: string
-          creative_id: string
+          cta_text?: string | null
+          destination_url?: string | null
+          headline?: string | null
           name: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          advertiser_id?: string
-          bundle_id?: string
+          app_id?: string | null
+          body?: string | null
           campaign_id?: string
           created_at?: string
-          creative_id?: string
+          cta_text?: string | null
+          destination_url?: string | null
+          headline?: string | null
           name?: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "campaigns_advertiser_id_fkey"
-            columns: ["advertiser_id"]
-            isOneToOne: false
-            referencedRelation: "advertisers"
-            referencedColumns: ["advertiser_id"]
-          },
-          {
-            foreignKeyName: "campaigns_bundle_id_fkey"
-            columns: ["bundle_id"]
-            isOneToOne: false
-            referencedRelation: "bundles"
-            referencedColumns: ["bundle_id"]
-          },
-          {
-            foreignKeyName: "campaigns_creative_id_fkey"
-            columns: ["creative_id"]
-            isOneToOne: false
-            referencedRelation: "creatives"
-            referencedColumns: ["creative_id"]
-          },
-        ]
-      }
-      click_events: {
-        Row: {
-          campaign_id: string
-          conversion_token_id: string | null
-          creative_id: string
-          dedupe_key: string
-          event_id: string
-          ingested_at: string
-          placement_id: string
-          serve_id: string | null
-          ts: string
-        }
-        Insert: {
-          campaign_id: string
-          conversion_token_id?: string | null
-          creative_id: string
-          dedupe_key: string
-          event_id?: string
-          ingested_at?: string
-          placement_id: string
-          serve_id?: string | null
-          ts: string
-        }
-        Update: {
-          campaign_id?: string
-          conversion_token_id?: string | null
-          creative_id?: string
-          dedupe_key?: string
-          event_id?: string
-          ingested_at?: string
-          placement_id?: string
-          serve_id?: string | null
-          ts?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "click_events_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["campaign_id"]
-          },
-          {
-            foreignKeyName: "click_events_creative_id_fkey"
-            columns: ["creative_id"]
-            isOneToOne: false
-            referencedRelation: "creatives"
-            referencedColumns: ["creative_id"]
-          },
-          {
-            foreignKeyName: "click_events_placement_id_fkey"
-            columns: ["placement_id"]
-            isOneToOne: false
-            referencedRelation: "placements"
-            referencedColumns: ["placement_id"]
-          },
-          {
-            foreignKeyName: "click_events_serve_id_fkey"
-            columns: ["serve_id"]
-            isOneToOne: false
-            referencedRelation: "serve_decisions"
-            referencedColumns: ["serve_id"]
-          },
-        ]
-      }
-      creatives: {
-        Row: {
-          advertiser_id: string
-          approved_at: string | null
-          body: string
-          created_at: string
-          creative_id: string
-          cta: string
-          destination_type: string
-          destination_value: string
-          headline: string
-          rejected_reason: string | null
-          sponsored_label: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          advertiser_id: string
-          approved_at?: string | null
-          body: string
-          created_at?: string
-          creative_id?: string
-          cta: string
-          destination_type: string
-          destination_value: string
-          headline: string
-          rejected_reason?: string | null
-          sponsored_label?: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          advertiser_id?: string
-          approved_at?: string | null
-          body?: string
-          created_at?: string
-          creative_id?: string
-          cta?: string
-          destination_type?: string
-          destination_value?: string
-          headline?: string
-          rejected_reason?: string | null
-          sponsored_label?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "creatives_advertiser_id_fkey"
-            columns: ["advertiser_id"]
-            isOneToOne: false
-            referencedRelation: "advertisers"
-            referencedColumns: ["advertiser_id"]
-          },
-        ]
-      }
-      credit_ledger_entries: {
-        Row: {
-          advertiser_id: string | null
-          amount_cents: number
-          created_at: string
-          entry_id: string
-          expires_at: string | null
-          publisher_id: string | null
-          related_campaign_id: string | null
-          type: string
-        }
-        Insert: {
-          advertiser_id?: string | null
-          amount_cents: number
-          created_at?: string
-          entry_id?: string
-          expires_at?: string | null
-          publisher_id?: string | null
-          related_campaign_id?: string | null
-          type: string
-        }
-        Update: {
-          advertiser_id?: string | null
-          amount_cents?: number
-          created_at?: string
-          entry_id?: string
-          expires_at?: string | null
-          publisher_id?: string | null
-          related_campaign_id?: string | null
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "credit_ledger_entries_advertiser_id_fkey"
-            columns: ["advertiser_id"]
-            isOneToOne: false
-            referencedRelation: "advertisers"
-            referencedColumns: ["advertiser_id"]
-          },
-          {
-            foreignKeyName: "credit_ledger_entries_publisher_id_fkey"
-            columns: ["publisher_id"]
-            isOneToOne: false
-            referencedRelation: "publishers"
-            referencedColumns: ["publisher_id"]
-          },
-          {
-            foreignKeyName: "credit_ledger_entries_related_campaign_id_fkey"
-            columns: ["related_campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["campaign_id"]
-          },
-        ]
-      }
-      impression_events: {
-        Row: {
-          campaign_id: string
-          creative_id: string
-          dedupe_key: string
-          event_id: string
-          ingested_at: string
-          placement_id: string
-          serve_id: string | null
-          ts: string
-        }
-        Insert: {
-          campaign_id: string
-          creative_id: string
-          dedupe_key: string
-          event_id?: string
-          ingested_at?: string
-          placement_id: string
-          serve_id?: string | null
-          ts: string
-        }
-        Update: {
-          campaign_id?: string
-          creative_id?: string
-          dedupe_key?: string
-          event_id?: string
-          ingested_at?: string
-          placement_id?: string
-          serve_id?: string | null
-          ts?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "impression_events_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["campaign_id"]
-          },
-          {
-            foreignKeyName: "impression_events_creative_id_fkey"
-            columns: ["creative_id"]
-            isOneToOne: false
-            referencedRelation: "creatives"
-            referencedColumns: ["creative_id"]
-          },
-          {
-            foreignKeyName: "impression_events_placement_id_fkey"
-            columns: ["placement_id"]
-            isOneToOne: false
-            referencedRelation: "placements"
-            referencedColumns: ["placement_id"]
-          },
-          {
-            foreignKeyName: "impression_events_serve_id_fkey"
-            columns: ["serve_id"]
-            isOneToOne: false
-            referencedRelation: "serve_decisions"
-            referencedColumns: ["serve_id"]
-          },
-        ]
-      }
-      placements: {
-        Row: {
-          app_id: string
-          category_id: string | null
-          created_at: string
-          enabled: boolean
-          frequency_cap_policy: Json | null
-          key: string
-          notes: string | null
-          placement_id: string
-          tags: string[] | null
-          updated_at: string
-        }
-        Insert: {
-          app_id: string
-          category_id?: string | null
-          created_at?: string
-          enabled?: boolean
-          frequency_cap_policy?: Json | null
-          key: string
-          notes?: string | null
-          placement_id?: string
-          tags?: string[] | null
-          updated_at?: string
-        }
-        Update: {
-          app_id?: string
-          category_id?: string | null
-          created_at?: string
-          enabled?: boolean
-          frequency_cap_policy?: Json | null
-          key?: string
-          notes?: string | null
-          placement_id?: string
-          tags?: string[] | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "placements_app_id_fkey"
+            foreignKeyName: "campaigns_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
             referencedRelation: "apps"
@@ -600,160 +207,103 @@ export type Database = {
           },
         ]
       }
-      publishers: {
+      slot_purchases: {
         Row: {
+          campaign_id: string | null
           created_at: string
-          email: string
-          name: string
-          payout_method: Json | null
-          publisher_id: string
+          percentage_purchased: number
+          price_cents: number
+          purchase_id: string
+          slot_id: string
           status: string
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
+          campaign_id?: string | null
           created_at?: string
-          email: string
-          name: string
-          payout_method?: Json | null
-          publisher_id?: string
+          percentage_purchased: number
+          price_cents: number
+          purchase_id?: string
+          slot_id: string
           status?: string
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
+          campaign_id?: string | null
           created_at?: string
-          email?: string
-          name?: string
-          payout_method?: Json | null
-          publisher_id?: string
+          percentage_purchased?: number
+          price_cents?: number
+          purchase_id?: string
+          slot_id?: string
           status?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slot_purchases_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "slot_purchases_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_slots"
+            referencedColumns: ["slot_id"]
+          },
+        ]
+      }
+      weekly_slots: {
+        Row: {
+          base_price_cents: number
+          created_at: string
+          slot_id: string
+          total_impressions_estimate: number
+          total_users_estimate: number
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          base_price_cents?: number
+          created_at?: string
+          slot_id?: string
+          total_impressions_estimate?: number
+          total_users_estimate?: number
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          base_price_cents?: number
+          created_at?: string
+          slot_id?: string
+          total_impressions_estimate?: number
+          total_users_estimate?: number
+          updated_at?: string
+          week_start?: string
         }
         Relationships: []
-      }
-      serve_decisions: {
-        Row: {
-          ad_id: string
-          campaign_id: string
-          creative_id: string
-          expires_at: string
-          issued_at: string
-          locale: string | null
-          nonce_hash: string | null
-          os_major: number | null
-          placement_id: string
-          sdk_version: string | null
-          serve_id: string
-        }
-        Insert: {
-          ad_id: string
-          campaign_id: string
-          creative_id: string
-          expires_at: string
-          issued_at?: string
-          locale?: string | null
-          nonce_hash?: string | null
-          os_major?: number | null
-          placement_id: string
-          sdk_version?: string | null
-          serve_id?: string
-        }
-        Update: {
-          ad_id?: string
-          campaign_id?: string
-          creative_id?: string
-          expires_at?: string
-          issued_at?: string
-          locale?: string | null
-          nonce_hash?: string | null
-          os_major?: number | null
-          placement_id?: string
-          sdk_version?: string | null
-          serve_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "serve_decisions_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["campaign_id"]
-          },
-          {
-            foreignKeyName: "serve_decisions_creative_id_fkey"
-            columns: ["creative_id"]
-            isOneToOne: false
-            referencedRelation: "creatives"
-            referencedColumns: ["creative_id"]
-          },
-          {
-            foreignKeyName: "serve_decisions_placement_id_fkey"
-            columns: ["placement_id"]
-            isOneToOne: false
-            referencedRelation: "placements"
-            referencedColumns: ["placement_id"]
-          },
-        ]
-      }
-      slot_bookings: {
-        Row: {
-          bundle_id: string
-          campaign_id: string
-          created_at: string
-          end_at: string
-          payment_type: string
-          price_cents: number
-          slot_booking_id: string
-          slot_type: string
-          start_at: string
-        }
-        Insert: {
-          bundle_id: string
-          campaign_id: string
-          created_at?: string
-          end_at: string
-          payment_type: string
-          price_cents: number
-          slot_booking_id?: string
-          slot_type: string
-          start_at: string
-        }
-        Update: {
-          bundle_id?: string
-          campaign_id?: string
-          created_at?: string
-          end_at?: string
-          payment_type?: string
-          price_cents?: number
-          slot_booking_id?: string
-          slot_type?: string
-          start_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "slot_bookings_bundle_id_fkey"
-            columns: ["bundle_id"]
-            isOneToOne: false
-            referencedRelation: "bundles"
-            referencedColumns: ["bundle_id"]
-          },
-          {
-            foreignKeyName: "slot_bookings_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["campaign_id"]
-          },
-        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_next_week_start: { Args: never; Returns: string }
+      get_week_availability: {
+        Args: { week_date: string }
+        Returns: {
+          available_percentage: number
+          base_price_cents: number
+          purchased_percentage: number
+          total_percentage: number
+          total_users_estimate: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -886,3 +436,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+A new version of Supabase CLI is available: v2.75.0 (currently installed v2.65.5)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

@@ -44,7 +44,7 @@ export default function NewCampaignPage() {
         .from('apps')
         .select('app_id, name, subtitle, icon_url, app_store_url')
         .eq('app_id', appId)
-        .single()
+        .single<AppData>()
 
       if (appError || !appData) {
         setError('Could not load app data')
