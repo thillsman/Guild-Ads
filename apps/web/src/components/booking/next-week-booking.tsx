@@ -40,7 +40,7 @@ export function NextWeekBooking({ campaignId, appId, userId }: NextWeekBookingPr
   useEffect(() => {
     async function fetchSlotData() {
       try {
-        const res = await fetch('/api/slots')
+        const res = await fetch('/api/slots', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch slot data')
         const data: ApiResponse = await res.json()
         setWeeks(data.weeks || [])

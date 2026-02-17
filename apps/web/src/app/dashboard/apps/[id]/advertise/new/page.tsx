@@ -77,7 +77,7 @@ export default function NewCampaignPage() {
       setIconUrl(appData.icon_url || '')
 
       // Fetch weeks
-      const res = await fetch('/api/slots')
+      const res = await fetch('/api/slots', { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setWeeks(data.weeks || [])

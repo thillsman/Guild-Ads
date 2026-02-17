@@ -21,7 +21,7 @@ export function NetworkPricingBanner() {
   useEffect(() => {
     async function fetchSlotData() {
       try {
-        const res = await fetch('/api/slots')
+        const res = await fetch('/api/slots', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch')
         const data = await res.json()
         setSlotData(data)
