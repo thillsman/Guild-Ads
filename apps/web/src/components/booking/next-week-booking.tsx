@@ -34,7 +34,73 @@ interface SlotData {
 }
 
 interface ApiResponse {
-  weeks: SlotData[]
+  weeks?: unknown
+}
+
+function asNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  return null
+}
+
+function normalizeWeek(payload: unknown): SlotData | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const source = payload as Record<string, unknown>
+  const weekStartRaw = source.weekStart ?? source.week_start
+  const slotIdRaw = source.slotId ?? source.slot_id
+
+  const weekStart = typeof weekStartRaw === 'string' ? weekStartRaw : null
+  const slotId = typeof slotIdRaw === 'string' ? slotIdRaw : null
+  const basePriceCents = asNumber(source.basePriceCents ?? source.base_price_cents)
+  const totalUsersEstimate = asNumber(source.totalUsersEstimate ?? source.total_users_estimate)
+  const purchasedPercentage = asNumber(source.purchasedPercentage ?? source.purchased_percentage)
+  const availablePercentage = asNumber(source.availablePercentage ?? source.available_percentage)
+  const weeksFromNow = asNumber(source.weeksFromNow ?? source.weeks_from_now)
+  const isNextWeekRaw = source.isNextWeek ?? source.is_next_week
+  const isNextWeek = typeof isNextWeekRaw === 'boolean' ? isNextWeekRaw : weeksFromNow === 0
+
+  const purchasesRaw = source.purchases
+  const purchases = Array.isArray(purchasesRaw)
+    ? purchasesRaw
+        .filter((entry): entry is { percentage_purchased: number; user_id: string; status: string } => {
+          if (!entry || typeof entry !== 'object') return false
+          const e = entry as Record<string, unknown>
+          return (
+            typeof e.user_id === 'string' &&
+            typeof e.status === 'string' &&
+            typeof e.percentage_purchased === 'number' &&
+            Number.isFinite(e.percentage_purchased)
+          )
+        })
+    : []
+
+  if (
+    !weekStart ||
+    !slotId ||
+    basePriceCents === null ||
+    totalUsersEstimate === null ||
+    purchasedPercentage === null ||
+    availablePercentage === null ||
+    weeksFromNow === null
+  ) {
+    return null
+  }
+
+  return {
+    weekStart,
+    slotId,
+    basePriceCents,
+    totalUsersEstimate,
+    purchasedPercentage,
+    availablePercentage,
+    isNextWeek,
+    weeksFromNow,
+    purchases,
+  }
 }
 
 export function NextWeekBooking({ appId, userId }: NextWeekBookingProps) {
@@ -51,7 +117,12 @@ export function NextWeekBooking({ appId, userId }: NextWeekBookingProps) {
         const res = await fetch('/api/slots', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch slot data')
         const data: ApiResponse = await res.json()
-        setWeeks(data.weeks || [])
+        const normalizedWeeks = Array.isArray(data.weeks)
+          ? data.weeks
+              .map((week) => normalizeWeek(week))
+              .filter((week): week is SlotData => week !== null)
+          : []
+        setWeeks(normalizedWeeks)
 
         // Fetch campaigns for this app
         if (appId) {

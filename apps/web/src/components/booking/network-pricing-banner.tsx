@@ -14,6 +14,44 @@ interface SlotData {
   availablePercentage: number
 }
 
+function asNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  return null
+}
+
+function normalizeSlotData(payload: unknown): SlotData | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const data = payload as Record<string, unknown>
+  const firstWeek = Array.isArray(data.weeks) && data.weeks.length > 0 && typeof data.weeks[0] === 'object'
+    ? (data.weeks[0] as Record<string, unknown>)
+    : null
+  const source = firstWeek ?? data
+
+  const weekStartRaw = source.weekStart ?? source.week_start
+  const weekStart = typeof weekStartRaw === 'string' ? weekStartRaw : null
+  const basePriceCents = asNumber(source.basePriceCents ?? source.base_price_cents)
+  const totalUsersEstimate = asNumber(source.totalUsersEstimate ?? source.total_users_estimate)
+  const purchasedPercentage = asNumber(source.purchasedPercentage ?? source.purchased_percentage)
+  const availablePercentage = asNumber(source.availablePercentage ?? source.available_percentage)
+
+  if (!weekStart || basePriceCents === null || totalUsersEstimate === null || purchasedPercentage === null || availablePercentage === null) {
+    return null
+  }
+
+  return {
+    weekStart,
+    basePriceCents,
+    totalUsersEstimate,
+    purchasedPercentage,
+    availablePercentage,
+  }
+}
+
 export function NetworkPricingBanner() {
   const [loading, setLoading] = useState(true)
   const [slotData, setSlotData] = useState<SlotData | null>(null)
@@ -23,8 +61,8 @@ export function NetworkPricingBanner() {
       try {
         const res = await fetch('/api/slots', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch')
-        const data = await res.json()
-        setSlotData(data)
+        const payload = await res.json()
+        setSlotData(normalizeSlotData(payload))
       } catch (err) {
         // Silently fail
       } finally {
