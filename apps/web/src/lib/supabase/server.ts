@@ -1,12 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from '@guild-ads/shared'
 
-export async function createClient() {
+type TypedSupabaseClient = SupabaseClient<Database>
+
+interface AuthUser {
+  id: string
+  email: string
+}
+
+export async function createClient(): Promise<TypedSupabaseClient> {
   const cookieStore = await cookies()
 
-  return createServerClient<Database>(
+  const client = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -27,6 +34,10 @@ export async function createClient() {
       },
     }
   )
+
+  // createServerClient currently infers `never` table rows with our generated Database type.
+  // Cast to the standard SupabaseClient type so query result types remain usable.
+  return client as unknown as TypedSupabaseClient
 }
 
 /**
@@ -43,25 +54,38 @@ export function createAdminClient() {
 /**
  * Get user from auth cookie (workaround for @supabase/ssr parsing issues)
  */
-export async function getAuthUser() {
-  const cookieStore = await cookies()
-  const authCookie = cookieStore.get('sb-pajbapyjgpulakxvzswi-auth-token')
+export async function getAuthUser(): Promise<AuthUser | null> {
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getUser()
 
-  if (!authCookie?.value) {
-    return null
+  if (data.user) {
+    return {
+      id: data.user.id,
+      email: data.user.email ?? '',
+    }
   }
 
-  try {
-    const session = JSON.parse(authCookie.value)
-    if (session.access_token && session.user) {
-      return session.user as {
-        id: string
-        email: string
-        [key: string]: unknown
+  // Fallback for environments where auth cookies are stale or malformed.
+  const cookieStore = await cookies()
+  const authCookie = cookieStore
+    .getAll()
+    .find((cookie) => cookie.name.endsWith('-auth-token'))
+
+  if (authCookie?.value) {
+    try {
+      const decoded = decodeURIComponent(authCookie.value)
+      const session = JSON.parse(decoded)
+
+      if (session?.access_token && session?.user) {
+        const fallbackUser = session.user as User
+        return {
+          id: fallbackUser.id,
+          email: fallbackUser.email ?? '',
+        }
       }
+    } catch {
+      // ignore fallback parse errors
     }
-  } catch {
-    return null
   }
 
   return null

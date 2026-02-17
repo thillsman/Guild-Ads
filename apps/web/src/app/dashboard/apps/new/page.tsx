@@ -71,15 +71,13 @@ export default function AddAppPage() {
       const supabase = createClient()
 
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      console.log('Insert user:', { userId: user?.id, userError })
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setError('You must be logged in to add an app.')
         return
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = await (supabase as any).from('apps').insert({
+      const appPayload = {
         user_id: user.id,
         name: name.trim() || appData.name,
         subtitle: subtitle.trim() || null,
@@ -88,20 +86,48 @@ export default function AddAppPage() {
         icon_url: appData.iconUrl,
         app_store_url: appData.appStoreUrl,
         status: 'active',
-      })
+      }
 
-      console.log('Insert result:', { insertError })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existingApps, error: existingError } = await (supabase as any)
+        .from('apps')
+        .select('app_id')
+        .eq('user_id', user.id)
+        .eq('bundle_identifier', appData.bundleIdentifier)
+        .order('created_at', { ascending: true })
 
-      if (insertError) {
-        if (insertError.code === '23505') {
+      if (existingError) {
+        setError(existingError.message)
+        return
+      }
+
+      const targetApp = existingApps?.[0]
+      let writeError: { code?: string; message: string } | null = null
+
+      if (targetApp?.app_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: updateError } = await (supabase as any)
+          .from('apps')
+          .update(appPayload)
+          .eq('app_id', targetApp.app_id)
+          .eq('user_id', user.id)
+
+        writeError = updateError
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: insertError } = await (supabase as any).from('apps').insert(appPayload)
+        writeError = insertError
+      }
+
+      if (writeError) {
+        if (writeError.code === '23505') {
           setError('This app has already been added to your account.')
         } else {
-          setError(insertError.message)
+          setError(writeError.message)
         }
         return
       }
 
-      console.log('App saved successfully, redirecting...')
       router.push('/dashboard')
       router.refresh()
     } catch (err) {

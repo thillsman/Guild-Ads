@@ -1,4 +1,4 @@
-import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
+import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,12 +11,12 @@ export default async function BookPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   // Get user's apps and campaigns
   const { data: apps } = await supabase
     .from('apps')
-    .select('app_id, name, icon_url')
+    .select('app_id, name, icon_url, bundle_identifier')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -27,7 +27,12 @@ export default async function BookPage() {
     .eq('status', 'scheduled')
     .order('created_at', { ascending: false })
 
-  const hasApps = apps && apps.length > 0
+  const dedupedApps = (apps ?? []).filter((app, index, allApps) => {
+    if (!app.bundle_identifier) return true
+    return allApps.findIndex((candidate) => candidate.bundle_identifier === app.bundle_identifier) === index
+  })
+
+  const hasApps = dedupedApps.length > 0
   const hasCampaigns = campaigns && campaigns.length > 0
 
   return (
@@ -76,7 +81,7 @@ export default async function BookPage() {
               </CardContent>
             </Card>
 
-            <NextWeekBooking userId={user.id} appId={apps[0].app_id} />
+            <NextWeekBooking userId={user.id} appId={dedupedApps[0].app_id} />
 
             <Card>
               <CardHeader>
@@ -85,7 +90,7 @@ export default async function BookPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {apps.map((app) => (
+                  {dedupedApps.map((app) => (
                     <Link
                       key={app.app_id}
                       href={`/dashboard/apps/${app.app_id}/advertise/new`}

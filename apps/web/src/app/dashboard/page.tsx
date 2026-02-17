@@ -1,4 +1,4 @@
-import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
+import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,14 +11,20 @@ export default async function DashboardPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
-  // Fetch user's apps (using admin client since RLS doesn't work with server-side auth)
+  // Fetch user's apps
   const { data: apps } = await supabase
     .from('apps')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  // Keep the most recently-created app for each bundle identifier.
+  const dedupedApps = (apps ?? []).filter((app, index, allApps) => {
+    if (!app.bundle_identifier) return true
+    return allApps.findIndex((candidate) => candidate.bundle_identifier === app.bundle_identifier) === index
+  })
 
   return (
     <div className="min-h-screen">
@@ -45,9 +51,9 @@ export default async function DashboardPage() {
           </Button>
         </div>
 
-        {apps && apps.length > 0 ? (
+        {dedupedApps.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {apps.map((app) => (
+            {dedupedApps.map((app) => (
               <Card key={app.app_id} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-4">
