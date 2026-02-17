@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Plus, ChartLine, Eye, CurrencyDollar } from '@phosphor-icons/react/dist/ssr'
+import { ArrowLeft, Plus, ChartLine, Eye, CalendarCheck } from '@phosphor-icons/react/dist/ssr'
 import { NextWeekBooking } from '@/components/booking/next-week-booking'
 
 interface Props {
@@ -36,10 +36,20 @@ export default async function AppAdvertisePage({ params }: Props) {
     notFound()
   }
 
-  // Fetch campaigns for this app
+  // Fetch campaigns for this app with their slot bookings
   const { data: campaigns } = await supabase
     .from('campaigns')
-    .select('*')
+    .select(`
+      *,
+      slot_purchases (
+        percentage_purchased,
+        price_cents,
+        status,
+        weekly_slots (
+          week_start
+        )
+      )
+    `)
     .eq('app_id', id)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -98,41 +108,60 @@ export default async function AppAdvertisePage({ params }: Props) {
 
         {campaigns && campaigns.length > 0 ? (
           <div className="grid gap-4">
-            {campaigns.map((campaign) => (
-              <Card key={campaign.campaign_id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{campaign.name}</CardTitle>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      campaign.status === 'active'
-                        ? 'bg-green-500/10 text-green-600'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {campaign.status}
-                    </span>
-                  </div>
-                  <CardDescription>
-                    Daily budget: ${campaign.daily_budget_usd?.toFixed(2) || '0.00'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4" />
-                      <span>0 impressions</span>
+            {campaigns.map((campaign) => {
+              const booking = campaign.slot_purchases?.[0]
+              const weekStart = booking?.weekly_slots?.week_start
+              const weekDate = weekStart ? new Date(weekStart + 'T00:00:00') : null
+              const formatWeek = (date: Date) => {
+                const end = new Date(date)
+                end.setDate(end.getDate() + 6)
+                return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+              }
+
+              return (
+                <Card key={campaign.campaign_id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        campaign.status === 'active'
+                          ? 'bg-green-500/10 text-green-600'
+                          : campaign.status === 'scheduled'
+                          ? 'bg-blue-500/10 text-blue-600'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {campaign.status}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <ChartLine className="h-4 w-4" />
-                      <span>0 clicks</span>
+                    {booking && (
+                      <CardDescription className="flex items-center gap-4">
+                        <span className="flex items-center gap-1">
+                          <CalendarCheck className="h-4 w-4" />
+                          {weekDate ? formatWeek(weekDate) : 'No week booked'}
+                        </span>
+                        <span>{booking.percentage_purchased}% of network</span>
+                        <span>${(booking.price_cents / 100).toFixed(2)}</span>
+                      </CardDescription>
+                    )}
+                    {!booking && (
+                      <CardDescription>No week booked yet</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-6 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        <span>0 impressions</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ChartLine className="h-4 w-4" />
+                        <span>0 clicks</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <CurrencyDollar className="h-4 w-4" />
-                      <span>$0.00 spent</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         ) : (
           <Card>

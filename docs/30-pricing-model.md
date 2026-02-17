@@ -101,9 +101,17 @@ Returns current week slot data:
 }
 ```
 
-## Price Adjustment Algorithm (Future)
+## Price Adjustment Algorithm
 
-After each week ends:
+After each week ends, we adjust the next week's price based on sell-through:
+
+| Sell-Through | Adjustment | Rationale |
+|--------------|------------|-----------|
+| ≥ 90% | +10% | High demand, increase price |
+| ≥ 70% | +5% | Good demand, slight increase |
+| 50-69% | No change | Healthy equilibrium |
+| 30-49% | -5% | Undersold, slight decrease |
+| < 30% | -10% | Low demand, decrease price |
 
 ```
 if (purchased_percentage >= 90):
@@ -119,6 +127,19 @@ else:
 ```
 
 This creates natural price discovery while maintaining stability.
+
+## Future Week Pricing
+
+For weeks beyond the next week:
+- The exact price is unknown until the previous week's booking closes
+- We show an **estimated range** of ±10% from the current week's price
+- Example: If current price is $1,000, future weeks show $900 - $1,100 range
+- This helps advertisers plan budgets while being transparent about potential changes
+
+When booking a future week, users:
+1. Select their desired percentage of the network
+2. See the estimated cost range based on current pricing
+3. Understand the final price will be set when the week becomes "next week"
 
 ## Initial Values
 

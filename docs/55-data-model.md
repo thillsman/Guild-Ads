@@ -1,191 +1,119 @@
-# Data Model (Conceptual)
+# Data Model
 
-This is a **conceptual** data model for Guild Ads v1. It’s meant to align product, backend, SDK, and dashboards.
-Field lists are suggested; adjust to your implementation (SQL tables, Prisma models, etc.).
+Guild Ads uses a simplified data model focused on getting ads running quickly.
 
-## High-level relationships
+## Core Entities
 
-- Publisher 1—N App
-- App 1—N Placement
-- Bundle N—M Placement (bundle membership)
-- Advertiser 1—N Campaign
-- Campaign 1—1 Creative (v1; allow multiple creatives later)
-- Campaign 1—N SlotBookings (if you allow repeated weeks/days)
-- Creative 1—N Assets
-- ServeDecision produced for (Placement, time) → references a Campaign/Creative
-- Events: Impression / Click (and optional Conversion) link back to ServeDecision / Campaign / Creative
+### apps
+iOS apps registered by users. Can be used for both publishing (showing ads) and advertising (promoting the app).
 
-## Core entities
+| Field | Type | Description |
+|-------|------|-------------|
+| `app_id` | uuid | Primary key |
+| `user_id` | uuid | Owner (FK to auth.users) |
+| `name` | text | App name |
+| `bundle_identifier` | text | iOS bundle ID |
+| `app_store_id` | text | App Store ID |
+| `subtitle` | text | App Store subtitle |
+| `icon_url` | text | App icon URL |
+| `app_store_url` | text | App Store link |
+| `platform` | text | Always 'ios' for now |
+| `status` | text | active, paused, review |
+| `created_at` | timestamptz | |
 
-### Publisher
-Represents an entity that shows ads.
-Suggested fields:
-- `publisher_id` (pk)
-- `name`
-- `email`
-- `status` (active, paused, review)
-- `payout_method` (provider ref)
-- `created_at`, `updated_at`
+### app_tokens
+API keys for the publisher SDK. One app can have multiple tokens.
 
-### App
-An iOS app registered by a publisher.
-Suggested fields:
-- `app_id` (pk)
-- `publisher_id` (fk)
-- `name`
-- `platform` (ios)
-- `bundle_identifier`
-- `status` (active, paused, review)
-- `created_at`, `updated_at`
+| Field | Type | Description |
+|-------|------|-------------|
+| `token_id` | uuid | Primary key |
+| `app_id` | uuid | FK to apps |
+| `user_id` | uuid | Owner |
+| `token_hash` | text | Hashed token (never store raw) |
+| `name` | text | Label (e.g., "Production") |
+| `last_used_at` | timestamptz | Last SDK request |
+| `revoked_at` | timestamptz | Null if active |
+| `created_at` | timestamptz | |
 
-### Placement
-A location in an app where a Sponsor Card can render.
-Suggested fields:
-- `placement_id` (pk)
-- `app_id` (fk)
-- `key` (e.g., `settings_footer`)
-- `category_id` (fk)
-- `tags` (string array)
-- `enabled` (bool)
-- `local_frequency_cap_policy` (json; defaults)
-- `notes` (optional)
-- `created_at`, `updated_at`
+### campaigns
+Ad campaigns promoting an app. Creative content is stored inline.
 
-### Advertiser
-Represents an entity that buys slots.
-Suggested fields:
-- `advertiser_id` (pk)
-- `name`
-- `billing_customer_id` (Stripe, etc.)
-- `status` (active, paused, review)
-- `created_at`, `updated_at`
+| Field | Type | Description |
+|-------|------|-------------|
+| `campaign_id` | uuid | Primary key |
+| `user_id` | uuid | Owner |
+| `app_id` | uuid | App being promoted |
+| `name` | text | Campaign name (internal) |
+| `headline` | text | Ad headline |
+| `body` | text | Ad body text |
+| `cta_text` | text | Call to action button |
+| `destination_url` | text | Where clicks go |
+| `status` | text | scheduled, active, completed, paused, canceled |
+| `created_at` | timestamptz | |
 
-### Bundle
-Curated collection of placements.
-Suggested fields:
-- `bundle_id` (pk)
-- `name`
-- `description`
-- `status` (active, paused)
-- `base_weekly_price_cents`
-- `price_floor_cents`, `price_ceiling_cents`
-- `created_at`, `updated_at`
+### weekly_slots
+Weekly network pricing. The entire network has one price per week.
 
-### BundlePlacement (join table)
-Suggested fields:
-- `bundle_id` (fk)
-- `placement_id` (fk)
-- `added_at`
-- `status` (active, removed)
+| Field | Type | Description |
+|-------|------|-------------|
+| `slot_id` | uuid | Primary key |
+| `week_start` | date | Sunday of the week (unique) |
+| `base_price_cents` | integer | Network price in cents |
+| `total_impressions_estimate` | integer | Expected impressions |
+| `total_users_estimate` | integer | Expected unique users |
+| `created_at` | timestamptz | |
 
-### Creative
-Sponsor Card content.
-Suggested fields:
-- `creative_id` (pk)
-- `advertiser_id` (fk)
-- `headline`
-- `body`
-- `cta`
-- `sponsored_label` (default "Sponsored")
-- `destination_type` (url, universal_link, deep_link)
-- `destination_value`
-- `status` (draft, submitted, approved, rejected, disabled)
-- `approved_at`, `rejected_reason`
+### slot_purchases
+Advertiser bookings against weekly slots.
 
-### Asset
-A file referenced by a creative.
-Suggested fields:
-- `asset_id` (pk)
-- `creative_id` (fk)
-- `type` (icon, image)
-- `url`
-- `bytes`
-- `mime_type`
-- `width`, `height`
-- `sha256` (optional)
-- `created_at`
+| Field | Type | Description |
+|-------|------|-------------|
+| `purchase_id` | uuid | Primary key |
+| `slot_id` | uuid | FK to weekly_slots |
+| `user_id` | uuid | Advertiser |
+| `campaign_id` | uuid | Campaign to run |
+| `percentage_purchased` | integer | 1-40% of network |
+| `price_cents` | integer | Calculated cost |
+| `status` | text | pending, confirmed, canceled, completed |
+| `created_at` | timestamptz | |
 
-### Campaign
-What is actually scheduled + served.
-Suggested fields:
-- `campaign_id` (pk)
-- `advertiser_id` (fk)
-- `bundle_id` (fk)
-- `creative_id` (fk)
-- `name`
-- `status` (scheduled, active, completed, paused, canceled)
-- `created_at`, `updated_at`
+### ad_requests
+Tracks SDK requests for metrics and serving.
 
-### SlotBooking
-Represents purchased time windows (weekly/daily).
-Suggested fields:
-- `slot_booking_id` (pk)
-- `campaign_id` (fk)
-- `bundle_id` (fk)
-- `slot_type` (daily, weekly)
-- `start_at`, `end_at`
-- `price_cents`
-- `payment_type` (card, credits, mixed)
-- `created_at`
+| Field | Type | Description |
+|-------|------|-------------|
+| `request_id` | uuid | Primary key |
+| `app_id` | uuid | Publisher app |
+| `campaign_id` | uuid | Campaign served (null if no fill) |
+| `device_id_hash` | text | Hashed device ID for unique user counts |
+| `sdk_version` | text | SDK version |
+| `os_version` | text | iOS version |
+| `locale` | text | Device locale |
+| `response_type` | text | ad, no_fill, error |
+| `clicked` | boolean | Was the ad clicked? |
+| `clicked_at` | timestamptz | When clicked |
+| `created_at` | timestamptz | Request time |
 
-### CreditLedgerEntry (optional)
-Tracks earned/spent credits.
-Suggested fields:
-- `entry_id` (pk)
-- `publisher_id` (fk, nullable)
-- `advertiser_id` (fk, nullable)
-- `type` (earn, spend, grant, expire, adjust)
-- `amount_cents`
-- `related_campaign_id` (nullable)
-- `expires_at` (nullable)
-- `created_at`
+## Relationships
 
-## Serving + events
+```
+User (auth.users)
+  └── apps (many)
+        ├── app_tokens (many) - for publishing
+        ├── campaigns (many) - for advertising
+        │     └── slot_purchases (many)
+        │           └── weekly_slots
+        └── ad_requests (many) - incoming SDK requests
+```
 
-### ServeDecision (optional persistence)
-You may persist ad decisions for debuggability and attribution of events.
-Suggested fields:
-- `serve_id` (pk)
-- `ad_id` (public identifier; may equal `serve_id`)
-- `campaign_id`
-- `creative_id`
-- `placement_id`
-- `issued_at`
-- `expires_at`
-- `nonce_hash` (store hash, not raw)
-- `sdk_version`, `os_major`, `locale` (coarse; optional)
+## Key Constraints
 
-### ImpressionEvent (raw, short retention)
-Suggested fields:
-- `event_id` (pk)
-- `serve_id` or (`campaign_id`, `creative_id`, `placement_id`, `time_bucket`)
-- `ts`
-- `dedupe_key`
-- `ingested_at`
+- **40% cap**: No single advertiser can buy more than 40% of a week
+- **Prepaid**: Slot purchases are paid upfront, no budget tracking needed
+- **One network**: All apps participate in one shared network (v1 simplicity)
 
-### ClickEvent (raw, short retention)
-Suggested fields:
-- same as impressions
-- may mint `conversion_token_id` (optional)
+## Privacy
 
-### ConversionEvent (optional, aggregate-friendly)
-Suggested fields:
-- `conversion_id` (pk)
-- `token_id` (or hashed token)
-- `event` (trial_start, purchase, etc.)
-- `value_cents` (optional)
-- `ts`
-
-## Reporting aggregates (materialized)
-For dashboards, create daily aggregates keyed by:
-- advertiser: `date, campaign_id, bundle_id`
-- publisher: `date, app_id, placement_id`
-Metrics:
-- impressions, clicks, CTR
-- spend (advertiser), earnings (publisher)
-- fill rate (publisher)
-
-## Privacy notes
-- Do not store user identifiers.
-- Keep locale and device data coarse and optional.
-- Apply thresholds in reporting queries (don’t show small counts).
+- Device IDs are hashed before storage
+- No user identifiers stored
+- Coarse metadata only (OS version, locale)

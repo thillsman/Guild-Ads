@@ -17,6 +17,7 @@ interface WeekSlotBookingProps {
   campaignId?: string
   appId?: string
   compact?: boolean
+  isNextWeek?: boolean
 }
 
 export function WeekSlotBooking({
@@ -29,6 +30,7 @@ export function WeekSlotBooking({
   campaignId,
   appId,
   compact = false,
+  isNextWeek = false,
 }: WeekSlotBookingProps) {
   const router = useRouter()
   const [percentage, setPercentage] = useState(10)
@@ -39,10 +41,21 @@ export function WeekSlotBooking({
   const maxPercentage = Math.min(40 - userPurchasedPercentage, availablePercentage)
   const minPercentage = 1
 
+  // Price adjustment factors based on previous week's sell-through
+  // For future weeks, price could go up or down based on demand
+  const MIN_PRICE_FACTOR = 0.9  // -10% if undersold
+  const MAX_PRICE_FACTOR = 1.1  // +10% if sold out
+
   // Calculate cost and reach
   const costCents = Math.round((basePriceCents * percentage) / 100)
   const costDollars = (costCents / 100).toFixed(2)
   const estimatedUsers = Math.round((totalUsersEstimate * percentage) / 100)
+
+  // For future weeks, show price range
+  const minCostCents = Math.round((basePriceCents * MIN_PRICE_FACTOR * percentage) / 100)
+  const maxCostCents = Math.round((basePriceCents * MAX_PRICE_FACTOR * percentage) / 100)
+  const minCostDollars = (minCostCents / 100).toFixed(2)
+  const maxCostDollars = (maxCostCents / 100).toFixed(2)
 
   // Format week date
   const weekDate = new Date(weekStart + 'T00:00:00')
@@ -129,15 +142,28 @@ export function WeekSlotBooking({
     )
   }
 
+  // Calculate others' percentage (total purchased minus user's)
+  const othersPurchasedPercentage = purchasedPercentage - userPurchasedPercentage
+
   return (
-    <Card>
+    <Card className={isNextWeek ? 'border-primary/50' : ''}>
       <CardHeader>
         <div className="flex items-center gap-2">
           <CalendarCheck className="h-5 w-5 text-primary" />
-          <CardTitle>Book for {formatDate(weekDate)} - {formatDate(weekEndDate)}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Book for {formatDate(weekDate)} - {formatDate(weekEndDate)}
+            {isNextWeek && (
+              <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-normal">
+                NEXT WEEK
+              </span>
+            )}
+          </CardTitle>
         </div>
         <CardDescription>
-          Reserve ad spots across the entire Guild network for next week
+          {isNextWeek
+            ? 'Reserve ad spots across the entire Guild network for next week'
+            : `Book ahead for the week of ${formatDate(weekDate)}`
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -159,15 +185,17 @@ export function WeekSlotBooking({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Network Availability</span>
-            <span>{availablePercentage}% available</span>
+            <span className={availablePercentage < 30 ? 'text-amber-600' : ''}>{availablePercentage}% available</span>
           </div>
           <div className="h-4 bg-muted rounded-full overflow-hidden flex">
             {/* Purchased by others */}
-            <div
-              className="h-full bg-muted-foreground/30"
-              style={{ width: `${purchasedPercentage - userPurchasedPercentage}%` }}
-              title="Purchased by others"
-            />
+            {othersPurchasedPercentage > 0 && (
+              <div
+                className="h-full bg-muted-foreground/40"
+                style={{ width: `${othersPurchasedPercentage}%` }}
+                title="Purchased by other advertisers"
+              />
+            )}
             {/* Your existing purchases */}
             {userPurchasedPercentage > 0 && (
               <div
@@ -185,19 +213,26 @@ export function WeekSlotBooking({
             {/* Available */}
             <div
               className="h-full bg-green-500/20"
-              style={{ width: `${availablePercentage - percentage}%` }}
+              style={{ width: `${Math.max(0, availablePercentage - percentage)}%` }}
               title="Still available"
             />
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {othersPurchasedPercentage > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded bg-muted-foreground/40" /> Other advertisers ({othersPurchasedPercentage}%)
+              </span>
+            )}
+            {userPurchasedPercentage > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded bg-primary/50" /> Your bookings ({userPurchasedPercentage}%)
+              </span>
+            )}
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-muted-foreground/30" /> Others ({purchasedPercentage - userPurchasedPercentage}%)
+              <span className="w-3 h-3 rounded bg-primary" /> New selection ({percentage}%)
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-primary" /> Your selection ({percentage}%)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-green-500/20" /> Available
+              <span className="w-3 h-3 rounded bg-green-500/20" /> Available ({Math.max(0, availablePercentage - percentage)}%)
             </span>
           </div>
         </div>
@@ -228,8 +263,14 @@ export function WeekSlotBooking({
           <div className="flex items-center gap-3">
             <CurrencyDollar className="h-8 w-8 text-primary" />
             <div>
-              <p className="text-sm text-muted-foreground">Your Cost</p>
-              <p className="text-2xl font-bold">${costDollars}</p>
+              <p className="text-sm text-muted-foreground">
+                {isNextWeek ? 'Your Cost' : 'Estimated Cost'}
+              </p>
+              {isNextWeek ? (
+                <p className="text-2xl font-bold">${costDollars}</p>
+              ) : (
+                <p className="text-xl font-bold">${minCostDollars} - ${maxCostDollars}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -241,13 +282,31 @@ export function WeekSlotBooking({
           </div>
         </div>
 
-        {/* Info */}
-        <div className="flex items-start gap-2 p-3 bg-blue-500/10 rounded-lg text-sm">
-          <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-          <p className="text-blue-600 dark:text-blue-400">
-            Pricing is transparent and fixed weekly. The network price adjusts based on demand—
-            if we sell out, prices increase; if we don't, they decrease.
-          </p>
+        {/* Pricing Info */}
+        <div className="p-4 bg-muted/50 rounded-lg text-sm space-y-3">
+          <div className="flex items-start gap-2">
+            <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-foreground">Transparent Dynamic Pricing</p>
+              <p className="text-muted-foreground mt-1">
+                {isNextWeek
+                  ? "This week's price is locked in. Book now at the current rate."
+                  : "Future week prices adjust based on how the previous week sells."
+                }
+              </p>
+            </div>
+          </div>
+          {!isNextWeek && (
+            <div className="pl-6 pt-2 border-t border-muted space-y-1 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">How prices adjust:</p>
+              <ul className="space-y-0.5">
+                <li>• If ≥90% sells → price increases 10%</li>
+                <li>• If ≥70% sells → price increases 5%</li>
+                <li>• If &lt;50% sells → price decreases 5%</li>
+                <li>• If &lt;30% sells → price decreases 10%</li>
+              </ul>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -269,8 +328,10 @@ export function WeekSlotBooking({
             'Sold Out'
           ) : !campaignId ? (
             `Create Campaign & Book ${percentage}%`
-          ) : (
+          ) : isNextWeek ? (
             `Book ${percentage}% for $${costDollars}`
+          ) : (
+            `Reserve ${percentage}% (~$${minCostDollars}-$${maxCostDollars})`
           )}
         </Button>
       </CardContent>
