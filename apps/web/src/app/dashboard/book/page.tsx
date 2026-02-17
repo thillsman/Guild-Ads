@@ -139,8 +139,7 @@ export default async function BookPage() {
 
             <NextWeekBooking
               userId={user.id}
-              campaignId={campaigns[0].campaign_id}
-              appId={campaigns[0].app_id}
+              appId={campaigns[0].app_id ?? undefined}
             />
           </div>
         )}

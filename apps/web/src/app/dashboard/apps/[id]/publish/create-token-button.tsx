@@ -63,7 +63,8 @@ export function CreateTokenButton({ appId }: Props) {
         return
       }
 
-      const { error: insertError } = await supabase.from('app_tokens').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insertError } = await (supabase as any).from('app_tokens').insert({
         app_id: appId,
         user_id: user.id,
         name: name.trim() || 'Default',

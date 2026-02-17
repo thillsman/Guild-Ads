@@ -97,7 +97,8 @@ export function WeekSlotBooking({
         return
       }
 
-      const { error: insertError } = await supabase.from('slot_purchases').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insertError } = await (supabase as any).from('slot_purchases').insert({
         slot_id: slotId,
         user_id: user.id,
         campaign_id: selectedCampaignId,
@@ -112,7 +113,8 @@ export function WeekSlotBooking({
       }
 
       // Update campaign status to scheduled
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('campaigns')
         .update({ status: 'scheduled' })
         .eq('campaign_id', selectedCampaignId)

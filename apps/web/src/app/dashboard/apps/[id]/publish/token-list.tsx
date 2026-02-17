@@ -41,7 +41,8 @@ export function TokenList({ tokens, appId }: Props) {
     try {
       const supabase = createClient()
 
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('app_tokens')
         .update({ revoked_at: new Date().toISOString() })
         .eq('token_id', tokenId)

@@ -89,7 +89,8 @@ export default function NewCampaignPage() {
         return
       }
 
-      const { error: campaignError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: campaignError } = await (supabase as any)
         .from('campaigns')
         .insert({
           user_id: user.id,

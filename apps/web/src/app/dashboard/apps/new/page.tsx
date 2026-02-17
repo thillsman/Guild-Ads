@@ -78,7 +78,8 @@ export default function AddAppPage() {
         return
       }
 
-      const { error: insertError } = await supabase.from('apps').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insertError } = await (supabase as any).from('apps').insert({
         user_id: user.id,
         name: name.trim() || appData.name,
         subtitle: subtitle.trim() || null,
