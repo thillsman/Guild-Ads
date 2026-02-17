@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output standalone for Render deployment
-  output: 'standalone',
+  // Use standalone output only for production deploys.
+  ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
 }
 
 module.exports = nextConfig
