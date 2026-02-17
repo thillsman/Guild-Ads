@@ -2,9 +2,8 @@ services:
   - type: web
     name: guild-ads-web
     runtime: node
-    rootDir: apps/web
-    buildCommand: cd ../.. && pnpm install && pnpm build:web
-    startCommand: pnpm start
+    buildCommand: pnpm install && pnpm build:web
+    startCommand: pnpm --filter @guild-ads/web start
     envVars:
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
