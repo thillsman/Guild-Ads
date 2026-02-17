@@ -4,11 +4,17 @@ import { useState, useEffect } from 'react'
 import { WeekSlotBooking } from './week-slot-booking'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SpinnerGap, Lock } from '@phosphor-icons/react'
+import { createClient } from '@/lib/supabase/client'
 
 interface NextWeekBookingProps {
-  campaignId?: string
   appId?: string
   userId?: string
+}
+
+interface Campaign {
+  campaign_id: string
+  name: string
+  headline: string
 }
 
 interface SlotData {
@@ -31,27 +37,41 @@ interface ApiResponse {
   weeks: SlotData[]
 }
 
-export function NextWeekBooking({ campaignId, appId, userId }: NextWeekBookingProps) {
+export function NextWeekBooking({ appId, userId }: NextWeekBookingProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [weeks, setWeeks] = useState<SlotData[]>([])
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [selectedWeek, setSelectedWeek] = useState<number>(0)
 
   useEffect(() => {
-    async function fetchSlotData() {
+    async function fetchData() {
       try {
+        // Fetch slots
         const res = await fetch('/api/slots', { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch slot data')
         const data: ApiResponse = await res.json()
         setWeeks(data.weeks || [])
+
+        // Fetch campaigns for this app
+        if (appId) {
+          const supabase = createClient()
+          const { data: campaignData } = await supabase
+            .from('campaigns')
+            .select('campaign_id, name, headline')
+            .eq('app_id', appId)
+            .order('created_at', { ascending: false })
+
+          setCampaigns(campaignData || [])
+        }
       } catch (err) {
         setError('Failed to load booking data')
       } finally {
         setLoading(false)
       }
     }
-    fetchSlotData()
-  }, [])
+    fetchData()
+  }, [appId])
 
   if (loading) {
     return (
@@ -123,12 +143,13 @@ export function NextWeekBooking({ campaignId, appId, userId }: NextWeekBookingPr
       {/* Selected week booking */}
       <WeekSlotBooking
         weekStart={currentWeek.weekStart}
+        slotId={currentWeek.slotId}
         basePriceCents={currentWeek.basePriceCents}
         totalUsersEstimate={currentWeek.totalUsersEstimate}
         purchasedPercentage={currentWeek.purchasedPercentage}
         availablePercentage={currentWeek.availablePercentage}
         userPurchasedPercentage={userPurchasedPercentage}
-        campaignId={campaignId}
+        campaigns={campaigns}
         appId={appId}
         isNextWeek={currentWeek.isNextWeek}
       />
@@ -143,7 +164,7 @@ export function NextWeekBooking({ campaignId, appId, userId }: NextWeekBookingPr
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {weeks.map((week, index) => {
                 const date = new Date(week.weekStart + 'T00:00:00')
-                const isLocked = false // Could check if week has started
+                const isLocked = false
 
                 return (
                   <button

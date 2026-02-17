@@ -1,20 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { SpinnerGap, CalendarCheck, Users, CurrencyDollar, Info } from '@phosphor-icons/react'
+import { SpinnerGap, CalendarCheck, Users, CurrencyDollar, Info, Plus, CaretDown } from '@phosphor-icons/react'
+
+interface Campaign {
+  campaign_id: string
+  name: string
+  headline: string
+}
 
 interface WeekSlotBookingProps {
   weekStart: string
+  slotId: string
   basePriceCents: number
   totalUsersEstimate: number
   purchasedPercentage: number
   availablePercentage: number
   userPurchasedPercentage?: number
-  campaignId?: string
+  campaigns?: Campaign[]
   appId?: string
   compact?: boolean
   isNextWeek?: boolean
@@ -22,18 +30,21 @@ interface WeekSlotBookingProps {
 
 export function WeekSlotBooking({
   weekStart,
+  slotId,
   basePriceCents,
   totalUsersEstimate,
   purchasedPercentage,
   availablePercentage,
   userPurchasedPercentage = 0,
-  campaignId,
+  campaigns = [],
   appId,
   compact = false,
   isNextWeek = false,
 }: WeekSlotBookingProps) {
   const router = useRouter()
   const [percentage, setPercentage] = useState(10)
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('')
+  const [showCampaignSelect, setShowCampaignSelect] = useState(false)
   const [booking, setBooking] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,9 +53,8 @@ export function WeekSlotBooking({
   const minPercentage = 1
 
   // Price adjustment factors based on previous week's sell-through
-  // For future weeks, price could go up or down based on demand
-  const MIN_PRICE_FACTOR = 0.9  // -10% if undersold
-  const MAX_PRICE_FACTOR = 1.1  // +10% if sold out
+  const MIN_PRICE_FACTOR = 0.9
+  const MAX_PRICE_FACTOR = 1.1
 
   // Calculate cost and reach
   const costCents = Math.round((basePriceCents * percentage) / 100)
@@ -67,10 +77,11 @@ export function WeekSlotBooking({
     day: 'numeric'
   })
 
+  const selectedCampaign = campaigns.find(c => c.campaign_id === selectedCampaignId)
+
   const bookSlot = async () => {
-    if (!campaignId) {
-      // Redirect to create campaign first
-      router.push(`/dashboard/apps/${appId}/advertise/new?booking=${percentage}`)
+    if (!selectedCampaignId) {
+      setShowCampaignSelect(true)
       return
     }
 
@@ -86,22 +97,10 @@ export function WeekSlotBooking({
         return
       }
 
-      // Get the slot_id for this week
-      const { data: slot } = await supabase
-        .from('weekly_slots')
-        .select('slot_id')
-        .eq('week_start', weekStart)
-        .single()
-
-      if (!slot) {
-        setError('Slot not found for this week.')
-        return
-      }
-
       const { error: insertError } = await supabase.from('slot_purchases').insert({
-        slot_id: slot.slot_id,
+        slot_id: slotId,
         user_id: user.id,
-        campaign_id: campaignId,
+        campaign_id: selectedCampaignId,
         percentage_purchased: percentage,
         price_cents: costCents,
         status: 'confirmed',
@@ -112,6 +111,14 @@ export function WeekSlotBooking({
         return
       }
 
+      // Update campaign status to scheduled
+      await supabase
+        .from('campaigns')
+        .update({ status: 'scheduled' })
+        .eq('campaign_id', selectedCampaignId)
+
+      setShowCampaignSelect(false)
+      setSelectedCampaignId('')
       router.refresh()
     } catch (err) {
       setError('Failed to book slot. Please try again.')
@@ -188,7 +195,6 @@ export function WeekSlotBooking({
             <span className={availablePercentage < 30 ? 'text-amber-600' : ''}>{availablePercentage}% available</span>
           </div>
           <div className="h-4 bg-muted rounded-full overflow-hidden flex">
-            {/* Purchased by others */}
             {othersPurchasedPercentage > 0 && (
               <div
                 className="h-full bg-muted-foreground/40"
@@ -196,7 +202,6 @@ export function WeekSlotBooking({
                 title="Purchased by other advertisers"
               />
             )}
-            {/* Your existing purchases */}
             {userPurchasedPercentage > 0 && (
               <div
                 className="h-full bg-primary/50"
@@ -204,13 +209,11 @@ export function WeekSlotBooking({
                 title="Your existing bookings"
               />
             )}
-            {/* Your new selection */}
             <div
               className="h-full bg-primary transition-all"
               style={{ width: `${percentage}%` }}
               title="Your selection"
             />
-            {/* Available */}
             <div
               className="h-full bg-green-500/20"
               style={{ width: `${Math.max(0, availablePercentage - percentage)}%` }}
@@ -309,13 +312,46 @@ export function WeekSlotBooking({
           )}
         </div>
 
+        {/* Campaign Selection */}
+        {showCampaignSelect && (
+          <div className="p-4 border rounded-lg space-y-3">
+            <p className="font-medium">Select a campaign to book</p>
+            {campaigns.length > 0 ? (
+              <div className="space-y-2">
+                {campaigns.map((campaign) => (
+                  <button
+                    key={campaign.campaign_id}
+                    onClick={() => setSelectedCampaignId(campaign.campaign_id)}
+                    className={`w-full p-3 rounded-lg text-left border transition-colors ${
+                      selectedCampaignId === campaign.campaign_id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted hover:border-muted-foreground/30'
+                    }`}
+                  >
+                    <p className="font-medium">{campaign.name}</p>
+                    <p className="text-sm text-muted-foreground">{campaign.headline}</p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No campaigns yet.</p>
+            )}
+            <Button asChild variant="outline" className="w-full">
+              <Link href={`/dashboard/apps/${appId}/advertise/new`}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Campaign
+              </Link>
+            </Button>
+          </div>
+        )}
+
         {error && (
           <p className="text-sm text-destructive">{error}</p>
         )}
 
         <Button
           onClick={bookSlot}
-          disabled={booking || maxPercentage < 1}
+          disabled={booking || maxPercentage < 1 || (showCampaignSelect && !selectedCampaignId)}
           className="w-full"
           size="lg"
         >
@@ -326,12 +362,17 @@ export function WeekSlotBooking({
             </>
           ) : maxPercentage < 1 ? (
             'Sold Out'
-          ) : !campaignId ? (
-            `Create Campaign & Book ${percentage}%`
-          ) : isNextWeek ? (
-            `Book ${percentage}% for $${costDollars}`
+          ) : showCampaignSelect && selectedCampaignId ? (
+            isNextWeek ? (
+              `Book ${percentage}% for $${costDollars}`
+            ) : (
+              `Reserve ${percentage}% (~$${minCostDollars}-$${maxCostDollars})`
+            )
           ) : (
-            `Reserve ${percentage}% (~$${minCostDollars}-$${maxCostDollars})`
+            <>
+              {isNextWeek ? `Book ${percentage}% for $${costDollars}` : `Reserve ${percentage}%`}
+              <CaretDown className="h-4 w-4 ml-2" />
+            </>
           )}
         </Button>
       </CardContent>

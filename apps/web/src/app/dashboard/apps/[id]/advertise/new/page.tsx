@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, SpinnerGap, Check, CalendarCheck, Users, CurrencyDollar } from '@phosphor-icons/react'
+import { ArrowLeft, SpinnerGap, Check } from '@phosphor-icons/react'
 
 interface AppData {
   app_id: string
@@ -16,17 +16,6 @@ interface AppData {
   subtitle: string | null
   icon_url: string | null
   app_store_url: string | null
-}
-
-interface WeekSlot {
-  weekStart: string
-  slotId: string
-  basePriceCents: number
-  totalUsersEstimate: number
-  purchasedPercentage: number
-  availablePercentage: number
-  isNextWeek: boolean
-  weeksFromNow: number
 }
 
 export default function NewCampaignPage() {
@@ -38,7 +27,6 @@ export default function NewCampaignPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [app, setApp] = useState<AppData | null>(null)
-  const [weeks, setWeeks] = useState<WeekSlot[]>([])
 
   // Form fields
   const [name, setName] = useState('')
@@ -47,16 +35,11 @@ export default function NewCampaignPage() {
   const [destinationUrl, setDestinationUrl] = useState('')
   const [iconUrl, setIconUrl] = useState('')
 
-  // Week selection
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0)
-  const [percentage, setPercentage] = useState(10)
-
-  // Fetch app data and weeks on mount
+  // Fetch app data on mount
   useEffect(() => {
     async function fetchData() {
       const supabase = createClient()
 
-      // Fetch app
       const { data: appData, error: appError } = await supabase
         .from('apps')
         .select('app_id, name, subtitle, icon_url, app_store_url')
@@ -75,40 +58,10 @@ export default function NewCampaignPage() {
       setBody(appData.subtitle || '')
       setDestinationUrl(appData.app_store_url || '')
       setIconUrl(appData.icon_url || '')
-
-      // Fetch weeks
-      const res = await fetch('/api/slots', { cache: 'no-store' })
-      if (res.ok) {
-        const data = await res.json()
-        setWeeks(data.weeks || [])
-      }
-
       setLoading(false)
     }
     fetchData()
   }, [appId])
-
-  const selectedWeek = weeks[selectedWeekIndex]
-  const isNextWeek = selectedWeek?.isNextWeek ?? false
-  const maxPercentage = selectedWeek ? Math.min(40, selectedWeek.availablePercentage) : 40
-
-  // Price calculations
-  const costCents = selectedWeek ? Math.round((selectedWeek.basePriceCents * percentage) / 100) : 0
-  const costDollars = (costCents / 100).toFixed(2)
-  const estimatedUsers = selectedWeek ? Math.round((selectedWeek.totalUsersEstimate * percentage) / 100) : 0
-
-  // For future weeks, show price range (±10% based on demand)
-  const minCostCents = selectedWeek ? Math.round((selectedWeek.basePriceCents * 0.9 * percentage) / 100) : 0
-  const maxCostCents = selectedWeek ? Math.round((selectedWeek.basePriceCents * 1.1 * percentage) / 100) : 0
-  const minCostDollars = (minCostCents / 100).toFixed(2)
-  const maxCostDollars = (maxCostCents / 100).toFixed(2)
-
-  const formatWeekDate = (weekStart: string) => {
-    const date = new Date(weekStart + 'T00:00:00')
-    const endDate = new Date(date)
-    endDate.setDate(endDate.getDate() + 6)
-    return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-  }
 
   const createCampaign = async () => {
     if (!name.trim()) {
@@ -121,10 +74,6 @@ export default function NewCampaignPage() {
     }
     if (!destinationUrl.trim()) {
       setError('Please enter a destination URL')
-      return
-    }
-    if (!selectedWeek) {
-      setError('Please select a week')
       return
     }
 
@@ -140,8 +89,7 @@ export default function NewCampaignPage() {
         return
       }
 
-      // Create campaign
-      const { data: campaign, error: campaignError } = await supabase
+      const { error: campaignError } = await supabase
         .from('campaigns')
         .insert({
           user_id: user.id,
@@ -151,28 +99,11 @@ export default function NewCampaignPage() {
           body: body.trim() || null,
           cta_text: 'View in App Store',
           destination_url: destinationUrl.trim(),
-          status: 'scheduled',
+          status: 'draft',
         })
-        .select()
-        .single()
 
       if (campaignError) {
         setError(campaignError.message)
-        return
-      }
-
-      // Create slot purchase
-      const { error: purchaseError } = await supabase.from('slot_purchases').insert({
-        slot_id: selectedWeek.slotId,
-        user_id: user.id,
-        campaign_id: campaign.campaign_id,
-        percentage_purchased: percentage,
-        price_cents: costCents,
-        status: 'confirmed',
-      })
-
-      if (purchaseError) {
-        setError(purchaseError.message)
         return
       }
 
@@ -210,120 +141,10 @@ export default function NewCampaignPage() {
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <h1 className="text-3xl font-bold mb-2">Create Campaign</h1>
         <p className="text-muted-foreground mb-8">
-          Book ad spots to reach users of other indie apps.
+          Create ad content for your app. You can book ad spots after creating.
         </p>
 
         <div className="space-y-6">
-          {/* Week Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarCheck className="h-5 w-5" />
-                Select Week
-              </CardTitle>
-              <CardDescription>
-                Choose which week to run your campaign
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {weeks.map((week, index) => (
-                  <button
-                    key={week.weekStart}
-                    onClick={() => {
-                      setSelectedWeekIndex(index)
-                      setPercentage(Math.min(percentage, Math.min(40, week.availablePercentage)))
-                    }}
-                    className={`p-3 rounded-lg text-left transition-colors border ${
-                      selectedWeekIndex === index
-                        ? 'border-primary bg-primary/5'
-                        : 'border-muted hover:border-muted-foreground/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1">
-                      {week.isNextWeek && (
-                        <span className="text-[10px] bg-primary text-primary-foreground px-1 py-0.5 rounded">NEXT</span>
-                      )}
-                      <span className="text-xs font-medium">{formatWeekDate(week.weekStart).split(' - ')[0]}</span>
-                    </div>
-                    <div className="mt-1.5">
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary/50"
-                          style={{ width: `${100 - week.availablePercentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">{week.availablePercentage}% available</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {selectedWeek && (
-                <>
-                  {/* Percentage slider */}
-                  <div className="pt-4 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <label className="text-sm font-medium">Network share</label>
-                      <span className="text-sm text-muted-foreground">Max 40%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={maxPercentage}
-                      value={percentage}
-                      onChange={(e) => setPercentage(parseInt(e.target.value))}
-                      className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>1%</span>
-                      <span className="font-bold text-foreground text-lg">{percentage}%</span>
-                      <span>{maxPercentage}%</span>
-                    </div>
-                  </div>
-
-                  {/* Cost summary */}
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CurrencyDollar className="h-6 w-6 text-primary" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          {isNextWeek ? 'Cost' : 'Est. Cost'}
-                        </p>
-                        {isNextWeek ? (
-                          <p className="text-xl font-bold">${costDollars}</p>
-                        ) : (
-                          <p className="text-lg font-bold">${minCostDollars} - ${maxCostDollars}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Users className="h-6 w-6 text-primary" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Est. Reach</p>
-                        <p className="text-xl font-bold">{estimatedUsers.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price adjustment explanation for future weeks */}
-                  {!isNextWeek && (
-                    <div className="text-xs text-muted-foreground p-3 bg-background rounded border">
-                      <p className="font-medium text-foreground mb-1">Why a range?</p>
-                      <p>Future week prices adjust based on demand:</p>
-                      <ul className="mt-1 space-y-0.5">
-                        <li>• ≥90% sold → +10%</li>
-                        <li>• ≥70% sold → +5%</li>
-                        <li>• &lt;50% sold → -5%</li>
-                        <li>• &lt;30% sold → -10%</li>
-                      </ul>
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Campaign Details */}
           <Card>
             <CardHeader>
@@ -421,21 +242,16 @@ export default function NewCampaignPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button onClick={createCampaign} disabled={saving || !selectedWeek} className="w-full" size="lg">
+          <Button onClick={createCampaign} disabled={saving} className="w-full" size="lg">
             {saving ? (
               <>
                 <SpinnerGap className="h-4 w-4 mr-2 animate-spin" />
                 Creating...
               </>
-            ) : isNextWeek ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                Create Campaign & Book {percentage}% for ${costDollars}
-              </>
             ) : (
               <>
                 <Check className="h-4 w-4 mr-2" />
-                Create Campaign & Reserve {percentage}% (~${minCostDollars}-${maxCostDollars})
+                Create Campaign
               </>
             )}
           </Button>
