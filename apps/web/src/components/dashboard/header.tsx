@@ -2,8 +2,9 @@
 
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Broadcast, SignOut, User } from '@phosphor-icons/react'
+import { SignOut, User } from '@phosphor-icons/react'
 
 interface DashboardHeaderProps {
   user: {
@@ -23,7 +24,20 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     <header className="border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Broadcast className="h-6 w-6 text-primary" weight="duotone" />
+          <Image
+            src="/logo.svg"
+            alt="Guild Ads"
+            width={24}
+            height={28}
+            className="dark:hidden"
+          />
+          <Image
+            src="/logo-white.svg"
+            alt="Guild Ads"
+            width={24}
+            height={28}
+            className="hidden dark:block"
+          />
           <span className="text-xl font-bold">Guild Ads</span>
         </Link>
 

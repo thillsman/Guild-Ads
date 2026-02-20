@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Broadcast, EnvelopeSimple, Lock } from '@phosphor-icons/react'
+import { EnvelopeSimple, Lock } from '@phosphor-icons/react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -82,7 +83,20 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-2 mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <Broadcast className="h-8 w-8 text-primary" weight="duotone" />
+            <Image
+              src="/logo.svg"
+              alt="Guild Ads"
+              width={32}
+              height={37}
+              className="dark:hidden"
+            />
+            <Image
+              src="/logo-white.svg"
+              alt="Guild Ads"
+              width={32}
+              height={37}
+              className="hidden dark:block"
+            />
             <span className="text-2xl font-bold">Guild Ads</span>
           </Link>
         </div>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Broadcast, Storefront, ShieldCheck } from '@phosphor-icons/react/dist/ssr'
@@ -10,7 +11,20 @@ export default function Home() {
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <Broadcast className="h-6 w-6 text-primary" weight="duotone" />
+            <Image
+              src="/logo.svg"
+              alt="Guild Ads"
+              width={24}
+              height={28}
+              className="dark:hidden"
+            />
+            <Image
+              src="/logo-white.svg"
+              alt="Guild Ads"
+              width={24}
+              height={28}
+              className="hidden dark:block"
+            />
             <span className="text-xl font-bold">Guild Ads</span>
           </div>
           <nav className="flex items-center gap-4">
