@@ -1,4 +1,6 @@
-import { createClient, getAuthUser } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
+
+import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,9 +13,9 @@ export default async function DashboardPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
-  // Fetch user's apps
+  // Fetch user's apps (using admin client since user is already verified via getAuthUser)
   const { data: apps } = await supabase
     .from('apps')
     .select('*')

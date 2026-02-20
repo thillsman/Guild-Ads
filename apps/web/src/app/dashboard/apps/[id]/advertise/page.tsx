@@ -1,4 +1,4 @@
-import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,7 +15,7 @@ export default async function AppAdvertisePage({ params }: Props) {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Fetch app with campaigns
   const { data: app, error } = await supabase

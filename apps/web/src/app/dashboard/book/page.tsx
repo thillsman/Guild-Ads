@@ -1,4 +1,4 @@
-import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,7 +11,7 @@ export default async function BookPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get user's apps and campaigns
   const { data: apps } = await supabase
