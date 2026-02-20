@@ -94,15 +94,11 @@ export function buildServeResponse(input: BuildAdResponseInput) {
   const clickURL = new URL(`/r/${input.ad.adID}`, input.origin)
   clickURL.searchParams.set('p', input.placementID)
   clickURL.searchParams.set('n', nonce)
+  const clickURLString = clickURL.toString()
 
   return {
     ad_id: input.ad.adID,
     placement_id: input.placementID,
-    title: input.ad.title,
-    subtitle: input.ad.subtitle,
-    icon_url: input.ad.iconURL,
-    destination_url: input.ad.destinationURL,
-    sponsored_label: input.ad.sponsoredLabel,
     creative: {
       headline: input.ad.title,
       body: input.ad.subtitle,
@@ -112,11 +108,10 @@ export function buildServeResponse(input: BuildAdResponseInput) {
     },
     destination: {
       type: 'url',
-      value: input.ad.destinationURL,
+      value: clickURLString,
     },
     reporting: {
       impression_url: impressionURL,
-      click_url: clickURL.toString(),
     },
     expiry: expiresAt.toISOString(),
     nonce,

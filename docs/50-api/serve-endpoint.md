@@ -37,11 +37,10 @@ Notes:
   },
   "destination": {
     "type": "url",
-    "value": "https://example.com/?ref=network"
+    "value": "https://api.example.com/r/ad_789?p=settings_footer&n=..."
   },
   "reporting": {
-    "impression_url": "https://api.example.com/v1/impression",
-    "click_url": "https://api.example.com/r/ad_789?p=settings_footer&n=..."
+    "impression_url": "https://api.example.com/v1/impression"
   },
   "expiry": "2026-02-10T18:00:00Z",
   "nonce": "signed_nonce_here"
