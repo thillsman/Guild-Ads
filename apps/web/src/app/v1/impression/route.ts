@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logAdRequest } from '@/lib/sdk-api/ad-requests'
 import { buildServeResponse, fetchHardcodedAd } from '@/lib/sdk-api/ad-serving'
-import { extractToken, readJSONBody, resolvePublisherApp, stringField } from '@/lib/sdk-api/common'
+import { extractToken, readJSONBody, resolvePublisherApp, resolveRequestOrigin, stringField } from '@/lib/sdk-api/common'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       deviceIdentifier: userID,
     })
 
-    const origin = new URL(request.url).origin
+    const origin = resolveRequestOrigin(request)
     const ad = buildServeResponse({
       ad: hardcodedAd,
       origin,

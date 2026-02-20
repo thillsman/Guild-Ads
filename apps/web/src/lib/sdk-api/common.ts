@@ -36,6 +36,43 @@ export async function readJSONBody(request: Request): Promise<JsonObject> {
   return {}
 }
 
+function firstHeaderValue(value: string | null): string | null {
+  if (!value) {
+    return null
+  }
+
+  const first = value.split(',')[0]?.trim()
+  return first && first.length > 0 ? first : null
+}
+
+function defaultProtocolForHost(host: string): 'http' | 'https' {
+  const hostname = host.split(':')[0]?.toLowerCase() ?? host.toLowerCase()
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    return 'http'
+  }
+
+  return 'https'
+}
+
+export function resolveRequestOrigin(request: Request): string {
+  const requestOrigin = new URL(request.url).origin
+  const forwardedHost = firstHeaderValue(request.headers.get('x-forwarded-host'))
+  const forwardedProto = firstHeaderValue(request.headers.get('x-forwarded-proto'))
+
+  if (forwardedHost) {
+    const protocol = forwardedProto ?? defaultProtocolForHost(forwardedHost)
+    return `${protocol}://${forwardedHost}`
+  }
+
+  const host = firstHeaderValue(request.headers.get('host'))
+  if (host) {
+    const protocol = forwardedProto ?? defaultProtocolForHost(host)
+    return `${protocol}://${host}`
+  }
+
+  return requestOrigin
+}
+
 export function stringField(body: JsonObject, key: string): string | null {
   const value = body[key]
   if (typeof value !== 'string') {

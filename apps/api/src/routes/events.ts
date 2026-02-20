@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { logAdRequest, markLatestRequestClicked } from '../lib/ad-requests.js'
 import { buildServeResponse, fetchHardcodedAd } from '../lib/hardcoded-ad.js'
-import { extractToken, readJSONBody, resolvePublisherApp, stringField } from '../lib/sdk.js'
+import { extractToken, readJSONBody, resolvePublisherApp, resolveRequestOrigin, stringField } from '../lib/sdk.js'
 
 export const eventsRoutes = new Hono()
 
@@ -77,7 +77,7 @@ eventsRoutes.post('/impression', async (c) => {
       deviceIdentifier: userID,
     })
 
-    const origin = new URL(c.req.url).origin
+    const origin = resolveRequestOrigin(c)
     const ad = buildServeResponse({
       ad: hardcodedAd,
       origin,

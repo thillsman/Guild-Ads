@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { buildServeResponse } from '@/lib/sdk-api/ad-serving'
-import { extractToken, hashValue, readJSONBody, resolvePublisherApp, stringField } from '@/lib/sdk-api/common'
+import {
+  extractToken,
+  hashValue,
+  readJSONBody,
+  resolvePublisherApp,
+  resolveRequestOrigin,
+  stringField,
+} from '@/lib/sdk-api/common'
 import { getOrAssignStickyAd } from '@/lib/sdk-api/sticky-ads'
 
 export const dynamic = 'force-dynamic'
@@ -43,7 +50,7 @@ export async function POST(request: Request) {
       return new NextResponse(null, { status: 204 })
     }
 
-    const origin = new URL(request.url).origin
+    const origin = resolveRequestOrigin(request)
     const ad = buildServeResponse({
       ad: result.ad,
       origin,
