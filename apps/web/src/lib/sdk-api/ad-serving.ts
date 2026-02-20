@@ -20,7 +20,8 @@ interface BuildAdResponseInput {
 }
 
 export async function fetchHardcodedAd(
-  supabase: SupabaseClient<Database>
+  supabase: SupabaseClient<Database>,
+  publisherAppId?: string
 ): Promise<HardcodedAd | null> {
   const { data: purchase, error: purchaseError } = await supabase
     .from('slot_purchases')
@@ -47,6 +48,11 @@ export async function fetchHardcodedAd(
   }
 
   if (!campaign || !campaign.destination_url) {
+    return null
+  }
+
+  // Don't show ads for the same app that's requesting them
+  if (publisherAppId && campaign.app_id === publisherAppId) {
     return null
   }
 
@@ -86,7 +92,9 @@ export async function fetchHardcodedAd(
 
 export function buildServeResponse(input: BuildAdResponseInput) {
   const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000)
-  const nonce = hashValue(`${input.ad.adID}:${input.placementID}:${expiresAt.toISOString()}`)
+  // Format without milliseconds for iOS ISO8601DateFormatter compatibility
+  const expiryISO = expiresAt.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const nonce = hashValue(`${input.ad.adID}:${input.placementID}:${expiryISO}`)
 
   const impressionURL = new URL('/v1/impression', input.origin).toString()
 
@@ -117,7 +125,7 @@ export function buildServeResponse(input: BuildAdResponseInput) {
       impression_url: impressionURL,
       click_url: clickURL.toString(),
     },
-    expiry: expiresAt.toISOString(),
+    expiry: expiryISO,
     nonce,
   }
 }

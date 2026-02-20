@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { logAdRequest } from '@/lib/sdk-api/ad-requests'
-import { buildServeResponse, fetchHardcodedAd } from '@/lib/sdk-api/ad-serving'
-import { extractToken, readJSONBody, resolvePublisherApp, stringField } from '@/lib/sdk-api/common'
+import { buildServeResponse } from '@/lib/sdk-api/ad-serving'
+import { extractToken, hashValue, readJSONBody, resolvePublisherApp, stringField } from '@/lib/sdk-api/common'
+import { getOrAssignStickyAd } from '@/lib/sdk-api/sticky-ads'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,9 +11,6 @@ export async function POST(request: Request) {
   const body = await readJSONBody(request)
   const appIDHint = stringField(body, 'app_id')
   const placementID = stringField(body, 'placement_id')
-  const sdkVersion = stringField(body, 'sdk_version')
-  const locale = stringField(body, 'locale')
-  const osVersion = stringField(body, 'os_version')
   const userID = stringField(body, 'user_id')
   const token = extractToken(request, body)
 
@@ -27,34 +24,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid app token or app_id' }, { status: 401 })
     }
 
-    const hardcodedAd = await fetchHardcodedAd(supabase)
-    if (!hardcodedAd) {
-      await logAdRequest(supabase, {
-        appID: publisherApp.appId,
-        campaignID: null,
-        responseType: 'no_fill',
-        sdkVersion,
-        osVersion,
-        locale,
-        deviceIdentifier: userID,
-      })
+    // Hash the user ID for privacy
+    const deviceIdHash = userID ? hashValue(userID) : null
 
+    // Get sticky ad (same ad for user+placement for the whole week)
+    if (!deviceIdHash) {
+      // No user ID - can't do sticky ads, return no fill
       return new NextResponse(null, { status: 204 })
     }
 
-    await logAdRequest(supabase, {
-      appID: publisherApp.appId,
-      campaignID: hardcodedAd.campaignID,
-      responseType: 'ad',
-      sdkVersion,
-      osVersion,
-      locale,
-      deviceIdentifier: userID,
+    const result = await getOrAssignStickyAd(supabase, {
+      deviceIdHash,
+      publisherAppId: publisherApp.appId,
+      placementId: placementID,
     })
+
+    if (!result) {
+      return new NextResponse(null, { status: 204 })
+    }
 
     const origin = new URL(request.url).origin
     const ad = buildServeResponse({
-      ad: hardcodedAd,
+      ad: result.ad,
       origin,
       placementID,
     })
