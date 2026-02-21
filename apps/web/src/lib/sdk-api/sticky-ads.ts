@@ -1,16 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@guild-ads/shared'
-import { hashValue } from './common'
-import { fetchHardcodedAd, type HardcodedAd } from './ad-serving'
+import { resolveServeWeekStart } from './common'
+import { fetchAdByCampaignID, fetchAdByPurchaseID, fetchWeightedAdForPublisher, type ServedAd } from './ad-serving'
 
 interface GetStickyAdInput {
   deviceIdHash: string
   publisherAppId: string
   placementId: string
+  neverNoFill?: boolean
 }
 
 interface StickyAdResult {
-  ad: HardcodedAd
+  ad: ServedAd
   isNewView: boolean
 }
 
@@ -18,11 +19,7 @@ interface StickyAdResult {
  * Get the Sunday (start of week) for a given date in UTC
  */
 export function getWeekStart(date: Date = new Date()): string {
-  const d = new Date(date)
-  d.setUTCHours(0, 0, 0, 0)
-  // Sunday = 0, so subtract day of week to get to Sunday
-  d.setUTCDate(d.getUTCDate() - d.getUTCDay())
-  return d.toISOString().split('T')[0] // YYYY-MM-DD
+  return resolveServeWeekStart(date)
 }
 
 /**
@@ -51,8 +48,10 @@ export async function getOrAssignStickyAd(
   if (existingView?.campaign_id) {
     // User already has an assigned ad - fetch and return it
     console.log('[sticky-ads] Found existing view, fetching ad by campaign:', existingView.campaign_id)
-    const ad = await fetchAdByCampaignId(supabase, existingView.campaign_id, input.publisherAppId)
-    console.log('[sticky-ads] fetchAdByCampaignId result:', ad ? { adID: ad.adID, title: ad.title } : null)
+    const ad = typeof existingView.slot_purchase_id === 'string'
+      ? await fetchAdByPurchaseID(supabase, existingView.slot_purchase_id, input.publisherAppId)
+      : await fetchAdByCampaignID(supabase, existingView.campaign_id, input.publisherAppId)
+    console.log('[sticky-ads] existing assignment lookup result:', ad ? { adID: ad.adID, title: ad.title } : null)
     if (ad) {
       // Update last_seen_at (view_count increment is nice-to-have, skip for now)
       await (supabase as any)
@@ -72,8 +71,11 @@ export async function getOrAssignStickyAd(
 
   // No existing assignment - fetch available ad
   console.log('[sticky-ads] No existing view, fetching new ad')
-  const ad = await fetchHardcodedAd(supabase, input.publisherAppId)
-  console.log('[sticky-ads] fetchHardcodedAd result:', ad ? { adID: ad.adID, title: ad.title } : null)
+  const ad = await fetchWeightedAdForPublisher(supabase, {
+    publisherAppId: input.publisherAppId,
+    neverNoFill: input.neverNoFill,
+  })
+  console.log('[sticky-ads] fetchWeightedAdForPublisher result:', ad ? { adID: ad.adID, title: ad.title } : null)
   if (!ad) {
     return null
   }
@@ -96,67 +98,6 @@ export async function getOrAssignStickyAd(
     })
 
   return { ad, isNewView: true }
-}
-
-/**
- * Fetch ad by campaign ID (for returning sticky ads)
- */
-async function fetchAdByCampaignId(
-  supabase: SupabaseClient<Database>,
-  campaignId: string,
-  publisherAppId: string
-): Promise<HardcodedAd | null> {
-  const { data: campaign } = await supabase
-    .from('campaigns')
-    .select('campaign_id, app_id, headline, body, cta_text, destination_url')
-    .eq('campaign_id', campaignId)
-    .maybeSingle()
-
-  if (!campaign || !campaign.destination_url) {
-    return null
-  }
-
-  // Don't show ads for the same app that's requesting them
-  if (campaign.app_id === publisherAppId) {
-    return null
-  }
-
-  let promotedAppName = 'Sponsored App'
-  let promotedAppSubtitle: string | null = null
-  let promotedIconURL: string | null = null
-
-  if (campaign.app_id) {
-    const { data: promotedApp } = await supabase
-      .from('apps')
-      .select('name, subtitle, icon_url')
-      .eq('app_id', campaign.app_id)
-      .maybeSingle()
-
-    if (promotedApp) {
-      promotedAppName = promotedApp.name
-      promotedAppSubtitle = promotedApp.subtitle
-      promotedIconURL = promotedApp.icon_url
-    }
-  }
-
-  // Get the purchase ID for this campaign
-  const { data: purchase } = await (supabase as any)
-    .from('slot_purchases')
-    .select('purchase_id')
-    .eq('campaign_id', campaignId)
-    .eq('status', 'confirmed')
-    .maybeSingle()
-
-  return {
-    adID: purchase?.purchase_id ?? campaignId,
-    campaignID: campaign.campaign_id,
-    title: campaign.headline ?? promotedAppName,
-    subtitle: campaign.body ?? promotedAppSubtitle ?? 'Discover this app',
-    cta: campaign.cta_text ?? 'Learn More',
-    iconURL: promotedIconURL,
-    destinationURL: campaign.destination_url,
-    sponsoredLabel: 'Sponsored',
-  }
 }
 
 /**

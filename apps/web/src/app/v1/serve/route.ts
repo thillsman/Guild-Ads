@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { buildServeResponse } from '@/lib/sdk-api/ad-serving'
+import { buildServeResponse, fetchWeightedAdForPublisher } from '@/lib/sdk-api/ad-serving'
 import {
   extractToken,
   hashValue,
+  isNoFillExemptPublisherUser,
   readJSONBody,
   resolvePublisherApp,
   resolveRequestOrigin,
@@ -31,19 +32,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid app token or app_id' }, { status: 401 })
     }
 
+    const neverNoFill = isNoFillExemptPublisherUser(publisherApp.userId)
+
     // Hash the user ID for privacy
     const deviceIdHash = userID ? hashValue(userID) : null
 
     // Get sticky ad (same ad for user+placement for the whole week)
     if (!deviceIdHash) {
-      // No user ID - can't do sticky ads, return no fill
-      return new NextResponse(null, { status: 204 })
+      if (!neverNoFill) {
+        // No user ID - can't do sticky ads, return no fill.
+        return new NextResponse(null, { status: 204 })
+      }
+
+      const ad = await fetchWeightedAdForPublisher(supabase, {
+        publisherAppId: publisherApp.appId,
+        neverNoFill: true,
+      })
+      if (!ad) {
+        return new NextResponse(null, { status: 204 })
+      }
+
+      const origin = resolveRequestOrigin(request)
+      const response = buildServeResponse({
+        ad,
+        origin,
+        placementID,
+      })
+
+      return NextResponse.json(response)
     }
 
     const result = await getOrAssignStickyAd(supabase, {
       deviceIdHash,
       publisherAppId: publisherApp.appId,
       placementId: placementID,
+      neverNoFill,
     })
 
     if (!result) {

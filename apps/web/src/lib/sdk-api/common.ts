@@ -12,15 +12,47 @@ interface ResolvePublisherAppInput {
 export interface PublisherApp {
   appId: string
   bundleIdentifier: string
+  userId: string | null
 }
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-export const HARD_CODED_PURCHASE_ID = '99d688ce-2240-4ee9-b55a-d1875ec28a70'
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const TEST_DEFAULT_WEEK_START = '2026-02-22'
+const NO_FILL_EXEMPT_USER_ID = 'd6ed936c-953c-484a-818f-d63aba9c3786'
+
+const TEST_FORCED_WEEK_START = (() => {
+  const configured = process.env.GUILD_ADS_TEST_FORCE_WEEK_START?.trim()
+  if (configured && DATE_ONLY_PATTERN.test(configured)) {
+    return configured
+  }
+
+  // Testing-only default so local dev can validate next-week delivery before Sunday.
+  if (process.env.NODE_ENV !== 'production') {
+    return TEST_DEFAULT_WEEK_START
+  }
+
+  return null
+})()
 
 export function hashValue(value: string): string {
   return createHash('sha256').update(value).digest('hex')
+}
+
+export function resolveServeWeekStart(date: Date = new Date()): string {
+  if (TEST_FORCED_WEEK_START) {
+    return TEST_FORCED_WEEK_START
+  }
+
+  const d = new Date(date)
+  d.setUTCHours(0, 0, 0, 0)
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay())
+  return d.toISOString().split('T')[0]
+}
+
+export function isNoFillExemptPublisherUser(userId: string | null | undefined): boolean {
+  return userId === NO_FILL_EXEMPT_USER_ID
 }
 
 export async function readJSONBody(request: Request): Promise<JsonObject> {
@@ -137,7 +169,7 @@ export async function resolvePublisherApp(
 
     const { data: appByToken, error: appError } = await supabase
       .from('apps')
-      .select('app_id, bundle_identifier')
+      .select('app_id, bundle_identifier, user_id')
       .eq('app_id', tokenRecord.app_id)
       .maybeSingle()
 
@@ -152,6 +184,7 @@ export async function resolvePublisherApp(
     return {
       appId: appByToken.app_id,
       bundleIdentifier: appByToken.bundle_identifier,
+      userId: appByToken.user_id,
     }
   }
 
@@ -164,7 +197,7 @@ export async function resolvePublisherApp(
   if (UUID_PATTERN.test(appHint)) {
     const { data: appByID, error: appError } = await supabase
       .from('apps')
-      .select('app_id, bundle_identifier')
+      .select('app_id, bundle_identifier, user_id')
       .eq('app_id', appHint)
       .maybeSingle()
 
@@ -179,12 +212,13 @@ export async function resolvePublisherApp(
     return {
       appId: appByID.app_id,
       bundleIdentifier: appByID.bundle_identifier,
+      userId: appByID.user_id,
     }
   }
 
   const { data: appByBundle, error: bundleError } = await supabase
     .from('apps')
-    .select('app_id, bundle_identifier')
+    .select('app_id, bundle_identifier, user_id')
     .eq('bundle_identifier', appHint)
     .maybeSingle()
 
@@ -199,5 +233,6 @@ export async function resolvePublisherApp(
   return {
     appId: appByBundle.app_id,
     bundleIdentifier: appByBundle.bundle_identifier,
+    userId: appByBundle.user_id,
   }
 }

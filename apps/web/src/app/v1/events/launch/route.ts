@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { buildServeResponse } from '@/lib/sdk-api/ad-serving'
+import { buildServeResponse, fetchWeightedAdForPublisher } from '@/lib/sdk-api/ad-serving'
 import {
   extractToken,
   hashValue,
+  isNoFillExemptPublisherUser,
   readJSONBody,
   resolvePublisherApp,
   resolveRequestOrigin,
@@ -27,21 +28,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid app token or app_id' }, { status: 401 })
     }
 
+    const neverNoFill = isNoFillExemptPublisherUser(publisherApp.userId)
     const origin = resolveRequestOrigin(request)
     const ads: Record<string, unknown> = {}
     const deviceIdHash = userID ? hashValue(userID) : null
 
-    // If we have a device ID, fetch sticky ads for placements
-    if (deviceIdHash) {
-      const placementsToFetch = prefetchPlacements.length > 0
-        ? prefetchPlacements.filter((p): p is string => typeof p === 'string')
-        : ['default']
+    const placementsToFetch = prefetchPlacements.length > 0
+      ? prefetchPlacements.filter((p): p is string => typeof p === 'string')
+      : ['default']
 
+    // If we have a device ID, fetch sticky ads for placements.
+    if (deviceIdHash) {
       for (const placementId of placementsToFetch) {
         const result = await getOrAssignStickyAd(supabase, {
           deviceIdHash,
           publisherAppId: publisherApp.appId,
           placementId,
+          neverNoFill,
         })
 
         if (result) {
@@ -51,6 +54,23 @@ export async function POST(request: Request) {
             placementID: placementId,
           })
         }
+      }
+    } else if (neverNoFill) {
+      // No device ID means no stickiness, but no-fill exempt publishers should still receive ads.
+      for (const placementId of placementsToFetch) {
+        const ad = await fetchWeightedAdForPublisher(supabase, {
+          publisherAppId: publisherApp.appId,
+          neverNoFill: true,
+        })
+        if (!ad) {
+          continue
+        }
+
+        ads[placementId] = buildServeResponse({
+          ad,
+          origin,
+          placementID: placementId,
+        })
       }
     }
 

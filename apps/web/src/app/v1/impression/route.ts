@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logAdRequest } from '@/lib/sdk-api/ad-requests'
-import { buildServeResponse, fetchHardcodedAd } from '@/lib/sdk-api/ad-serving'
+import { buildServeResponse, fetchAdByPurchaseID } from '@/lib/sdk-api/ad-serving'
 import { extractToken, readJSONBody, resolvePublisherApp, resolveRequestOrigin, stringField } from '@/lib/sdk-api/common'
 
 export const dynamic = 'force-dynamic'
@@ -28,14 +28,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid app token or app_id' }, { status: 401 })
     }
 
-    const hardcodedAd = await fetchHardcodedAd(supabase)
-    if (!hardcodedAd || hardcodedAd.adID !== adID) {
+    const servedAd = await fetchAdByPurchaseID(supabase, adID)
+    if (!servedAd) {
       return NextResponse.json({ error: 'Unknown ad_id' }, { status: 404 })
     }
 
     await logAdRequest(supabase, {
       appID: publisherApp.appId,
-      campaignID: hardcodedAd.campaignID,
+      campaignID: servedAd.campaignID,
       responseType: 'ad',
       sdkVersion,
       osVersion,
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     const origin = resolveRequestOrigin(request)
     const ad = buildServeResponse({
-      ad: hardcodedAd,
+      ad: servedAd,
       origin,
       placementID,
     })
