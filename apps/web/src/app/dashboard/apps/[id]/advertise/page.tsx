@@ -237,7 +237,7 @@ export default async function AppAdvertisePage({ params }: Props) {
                             <p className="mt-1 text-lg font-semibold">{totals.impressions.toLocaleString()}</p>
                           </div>
                           <div className="rounded-lg bg-muted/40 p-3">
-                            <p className="text-xs uppercase text-muted-foreground tracking-wide">Unique Users</p>
+                            <p className="text-xs uppercase text-muted-foreground tracking-wide">Users</p>
                             <p className="mt-1 text-lg font-semibold">{totals.uniqueUsers.toLocaleString()}</p>
                           </div>
                           <div className="rounded-lg bg-muted/40 p-3">
@@ -246,13 +246,17 @@ export default async function AppAdvertisePage({ params }: Props) {
                           </div>
                         </div>
 
+                        <p className="text-xs text-muted-foreground">
+                          Publisher payouts are calculated from weekly unique-user share. Impressions and clicks are additional performance signals.
+                        </p>
+
                         <div className="overflow-x-auto">
                           <table className="w-full min-w-[480px] text-sm">
                             <thead>
                               <tr className="border-b text-left text-muted-foreground">
                                 <th className="py-2 pr-3 font-medium">Week</th>
                                 <th className="py-2 pr-3 font-medium">Impressions</th>
-                                <th className="py-2 pr-3 font-medium">Unique Users</th>
+                                <th className="py-2 pr-3 font-medium">Users</th>
                                 <th className="py-2 font-medium">Clicks</th>
                               </tr>
                             </thead>

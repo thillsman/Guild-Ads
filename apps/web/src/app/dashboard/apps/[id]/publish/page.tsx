@@ -371,6 +371,9 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Publisher payment is calculated from weekly unique-user share. Impressions and clicks are shown for delivery and engagement context.
+            </p>
             {weeklyTotals.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-sm">
@@ -378,7 +381,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
                     <tr className="border-b text-left text-muted-foreground">
                       <th className="py-2 pr-3 font-medium">Week</th>
                       <th className="py-2 pr-3 font-medium">Impressions</th>
-                      <th className="py-2 pr-3 font-medium">Unique Users</th>
+                      <th className="py-2 pr-3 font-medium">Users</th>
                       <th className="py-2 font-medium">Clicks</th>
                     </tr>
                   </thead>
@@ -404,7 +407,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
           <CardHeader>
             <CardTitle>Data Volume</CardTitle>
             <CardDescription>
-              Row counts and recent growth so you can monitor storage footprint
+              Request and tracking volume so you can monitor storage footprint
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -412,24 +415,27 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Ad Request Rows</p>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Logged Requests</p>
                     <p className="mt-1 text-lg font-semibold">{dataVolume.adRequestRows.toLocaleString()}</p>
                   </div>
                   <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Sticky View Rows</p>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Tracked User-Weeks</p>
                     <p className="mt-1 text-lg font-semibold">{dataVolume.uniqueAdViewRows.toLocaleString()}</p>
                   </div>
                   <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Rows (Last 7d)</p>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Requests (Last 7d)</p>
                     <p className="mt-1 text-lg font-semibold">{dataVolume.adRequestRows7d.toLocaleString()}</p>
                   </div>
                   <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Rows (Last 30d)</p>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Requests (Last 30d)</p>
                     <p className="mt-1 text-lg font-semibold">{dataVolume.adRequestRows30d.toLocaleString()}</p>
                   </div>
                 </div>
 
                 <div className="text-xs text-muted-foreground space-y-1">
+                  <p>
+                    Tracked User-Weeks = one user, one placement, one week (used for stable ad assignment).
+                  </p>
                   <p>
                     First ad request:{' '}
                     {dataVolume.firstAdRequestAt
@@ -454,7 +460,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
           <CardHeader>
             <CardTitle>Daily Growth</CardTitle>
             <CardDescription>
-              Daily row growth for the last {STORAGE_DAILY_WINDOW_DAYS} days
+              Daily request and performance growth for the last {STORAGE_DAILY_WINDOW_DAYS} days
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -464,9 +470,9 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
                   <thead>
                     <tr className="border-b text-left text-muted-foreground">
                       <th className="py-2 pr-3 font-medium">Day</th>
-                      <th className="py-2 pr-3 font-medium">Ad Request Rows</th>
+                      <th className="py-2 pr-3 font-medium">Logged Requests</th>
                       <th className="py-2 pr-3 font-medium">Impressions</th>
-                      <th className="py-2 pr-3 font-medium">Unique Users</th>
+                      <th className="py-2 pr-3 font-medium">Users</th>
                       <th className="py-2 font-medium">Clicks</th>
                     </tr>
                   </thead>
@@ -511,7 +517,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
                       <th className="py-2 pr-3 font-medium">Week</th>
                       <th className="py-2 pr-3 font-medium">Placement</th>
                       <th className="py-2 pr-3 font-medium">Impressions</th>
-                      <th className="py-2 pr-3 font-medium">Unique Users</th>
+                      <th className="py-2 pr-3 font-medium">Users</th>
                       <th className="py-2 font-medium">Clicks</th>
                     </tr>
                   </thead>
