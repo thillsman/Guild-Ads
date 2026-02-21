@@ -6,6 +6,7 @@ type ResponseType = 'ad' | 'no_fill' | 'error'
 interface LogAdRequestInput {
   appID: string
   campaignID: string | null
+  placementID: string | null
   responseType: ResponseType
   sdkVersion: string | null
   osVersion: string | null
@@ -16,6 +17,7 @@ interface LogAdRequestInput {
 interface MarkClickedInput {
   appID: string
   campaignID: string
+  placementID?: string | null
 }
 
 export async function logAdRequest(input: LogAdRequestInput): Promise<void> {
@@ -24,6 +26,7 @@ export async function logAdRequest(input: LogAdRequestInput): Promise<void> {
   const { error } = await supabase.from('ad_requests').insert({
     app_id: input.appID,
     campaign_id: input.campaignID,
+    placement_id: input.placementID ?? 'default',
     response_type: input.responseType,
     sdk_version: input.sdkVersion,
     os_version: input.osVersion,
@@ -37,12 +40,18 @@ export async function logAdRequest(input: LogAdRequestInput): Promise<void> {
 }
 
 export async function markLatestRequestClicked(input: MarkClickedInput): Promise<void> {
-  const { data: requestRow, error: requestError } = await supabase
+  let query = supabase
     .from('ad_requests')
     .select('request_id')
     .eq('app_id', input.appID)
     .eq('campaign_id', input.campaignID)
     .eq('clicked', false)
+
+  if (input.placementID) {
+    query = query.eq('placement_id', input.placementID)
+  }
+
+  const { data: requestRow, error: requestError } = await query
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()

@@ -23,6 +23,7 @@ eventsRoutes.post('/events/launch', async (c) => {
     await logAdRequest({
       appID: publisherApp.appId,
       campaignID: null,
+      placementID: 'default',
       responseType: 'no_fill',
       sdkVersion,
       osVersion,
@@ -70,6 +71,7 @@ eventsRoutes.post('/impression', async (c) => {
     await logAdRequest({
       appID: publisherApp.appId,
       campaignID: hardcodedAd.campaignID,
+      placementID,
       responseType: 'ad',
       sdkVersion,
       osVersion,
@@ -96,6 +98,7 @@ eventsRoutes.post('/events/click', async (c) => {
   const token = extractToken(c, body)
   const appIDHint = stringField(body, 'app_id')
   const adID = stringField(body, 'ad_id')
+  const placementID = stringField(body, 'placement_id')
 
   if (!adID) {
     return c.json({ error: 'ad_id is required' }, 400)
@@ -115,6 +118,7 @@ eventsRoutes.post('/events/click', async (c) => {
     await markLatestRequestClicked({
       appID: publisherApp.appId,
       campaignID: hardcodedAd.campaignID,
+      placementID,
     })
 
     return c.json({ ok: true })

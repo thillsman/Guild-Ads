@@ -34,6 +34,7 @@ serveRoutes.post('/serve', async (c) => {
       await logAdRequest({
         appID: publisherApp.appId,
         campaignID: null,
+        placementID,
         responseType: 'no_fill',
         sdkVersion,
         osVersion,
@@ -46,6 +47,7 @@ serveRoutes.post('/serve', async (c) => {
     await logAdRequest({
       appID: publisherApp.appId,
       campaignID: hardcodedAd.campaignID,
+      placementID,
       responseType: 'ad',
       sdkVersion,
       osVersion,

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { markLatestRequestClicked } from '@/lib/sdk-api/ad-requests'
 import { fetchAdByPurchaseID } from '@/lib/sdk-api/ad-serving'
-import { extractToken, readJSONBody, resolvePublisherApp, stringField } from '@/lib/sdk-api/common'
+import { recordAdClick } from '@/lib/sdk-api/sticky-ads'
+import { extractToken, hashValue, readJSONBody, resolvePublisherApp, stringField } from '@/lib/sdk-api/common'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
   const token = extractToken(request, body)
   const appIDHint = stringField(body, 'app_id')
   const adID = stringField(body, 'ad_id')
+  const placementID = stringField(body, 'placement_id') ?? 'default'
+  const userID = stringField(body, 'user_id')
 
   if (!adID) {
     return NextResponse.json({ error: 'ad_id is required' }, { status: 400 })
@@ -31,7 +34,16 @@ export async function POST(request: Request) {
     await markLatestRequestClicked(supabase, {
       appID: publisherApp.appId,
       campaignID: servedAd.campaignID,
+      placementID,
     })
+
+    if (userID) {
+      await recordAdClick(supabase, {
+        deviceIdHash: hashValue(userID),
+        publisherAppId: publisherApp.appId,
+        placementId: placementID,
+      })
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error) {

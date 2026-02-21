@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     await logAdRequest(supabase, {
       appID: publisherApp.appId,
       campaignID: servedAd.campaignID,
+      placementID,
       responseType: 'ad',
       sdkVersion,
       osVersion,

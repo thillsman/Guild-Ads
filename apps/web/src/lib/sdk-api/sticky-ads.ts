@@ -31,51 +31,52 @@ export async function getOrAssignStickyAd(
   input: GetStickyAdInput
 ): Promise<StickyAdResult | null> {
   const weekStart = getWeekStart()
-  console.log('[sticky-ads] getOrAssignStickyAd:', { ...input, weekStart })
 
   // Check if user already has an assigned ad for this placement+week
   const { data: existingView, error: existingError } = await (supabase as any)
     .from('unique_ad_views')
-    .select('campaign_id, slot_purchase_id')
+    .select('campaign_id, slot_purchase_id, view_count')
     .eq('device_id_hash', input.deviceIdHash)
     .eq('publisher_app_id', input.publisherAppId)
     .eq('placement_id', input.placementId)
     .eq('week_start', weekStart)
     .maybeSingle()
 
-  console.log('[sticky-ads] existingView:', { existingView, existingError })
+  if (existingError) {
+    console.error('[sticky-ads] failed to lookup existing view', existingError)
+  }
 
   if (existingView?.campaign_id) {
     // User already has an assigned ad - fetch and return it
-    console.log('[sticky-ads] Found existing view, fetching ad by campaign:', existingView.campaign_id)
     const ad = typeof existingView.slot_purchase_id === 'string'
       ? await fetchAdByPurchaseID(supabase, existingView.slot_purchase_id, input.publisherAppId)
       : await fetchAdByCampaignID(supabase, existingView.campaign_id, input.publisherAppId)
-    console.log('[sticky-ads] existing assignment lookup result:', ad ? { adID: ad.adID, title: ad.title } : null)
     if (ad) {
-      // Update last_seen_at (view_count increment is nice-to-have, skip for now)
+      const currentViewCount = typeof existingView.view_count === 'number' && existingView.view_count > 0
+        ? existingView.view_count
+        : 1
+
       await (supabase as any)
         .from('unique_ad_views')
-        .update({ last_seen_at: new Date().toISOString() })
+        .update({
+          last_seen_at: new Date().toISOString(),
+          view_count: currentViewCount + 1,
+        })
         .eq('device_id_hash', input.deviceIdHash)
         .eq('publisher_app_id', input.publisherAppId)
         .eq('placement_id', input.placementId)
         .eq('week_start', weekStart)
 
-      console.log('[sticky-ads] Returning existing ad')
       return { ad, isNewView: false }
     }
     // Campaign no longer valid, fall through to assign new one
-    console.log('[sticky-ads] Existing campaign no longer valid, assigning new one')
   }
 
   // No existing assignment - fetch available ad
-  console.log('[sticky-ads] No existing view, fetching new ad')
   const ad = await fetchWeightedAdForPublisher(supabase, {
     publisherAppId: input.publisherAppId,
     neverNoFill: input.neverNoFill,
   })
-  console.log('[sticky-ads] fetchWeightedAdForPublisher result:', ad ? { adID: ad.adID, title: ad.title } : null)
   if (!ad) {
     return null
   }
