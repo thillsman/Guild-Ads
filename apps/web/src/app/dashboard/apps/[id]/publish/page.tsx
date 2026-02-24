@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Key, ChartLine, CheckCircle, XCircle } from '@phosphor-icons/react/dist/ssr'
 import { CreateTokenButton } from './create-token-button'
+import { ConnectOnboardingCard } from './connect-onboarding-card'
 import { TokenList } from './token-list'
 
 interface Props {
@@ -270,6 +271,8 @@ export default async function AppPublishPage({ params }: Props) {
         payoutStatus: row.payout_status,
         holdUntil: row.hold_until,
         paidAt: row.paid_at,
+        grossCents: gross,
+        convertedCents: converted,
         netCents: Math.max(0, gross - converted),
       }
     })
@@ -504,25 +507,25 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
               </div>
             </div>
 
-            <div className="rounded-lg border p-3 text-sm">
-              <p className="font-medium">Stripe Connect</p>
-              {connectAccount?.stripe_account_id ? (
-                <div className="mt-2 text-muted-foreground space-y-1">
-                  <p>Account: <span className="font-mono text-xs">{connectAccount.stripe_account_id}</span></p>
-                  <p>Details submitted: {connectAccount.details_submitted ? 'Yes' : 'No'}</p>
-                  <p>Payouts enabled: {connectAccount.payouts_enabled ? 'Yes' : 'No'}</p>
-                </div>
-              ) : (
-                <p className="mt-2 text-muted-foreground">No connected Stripe payout account yet.</p>
-              )}
-            </div>
+            <ConnectOnboardingCard
+              returnPath={`/dashboard/apps/${id}/publish`}
+              initialStatus={{
+                connected: !!connectAccount?.stripe_account_id,
+                stripeAccountId: connectAccount?.stripe_account_id ?? null,
+                payoutsEnabled: connectAccount?.payouts_enabled === true,
+                chargesEnabled: connectAccount?.charges_enabled === true,
+                detailsSubmitted: connectAccount?.details_submitted === true,
+              }}
+            />
 
             {weeklyEarnings.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-sm">
+                <table className="w-full min-w-[760px] text-sm">
                   <thead>
                     <tr className="border-b text-left text-muted-foreground">
                       <th className="py-2 pr-3 font-medium">Week</th>
+                      <th className="py-2 pr-3 font-medium">Gross</th>
+                      <th className="py-2 pr-3 font-medium">Converted</th>
                       <th className="py-2 pr-3 font-medium">Net Earnings</th>
                       <th className="py-2 pr-3 font-medium">Status</th>
                       <th className="py-2 pr-3 font-medium">Hold Until</th>
@@ -533,6 +536,8 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
                     {weeklyEarnings.map((row) => (
                       <tr key={row.weekStart} className="border-b last:border-0">
                         <td className="py-2 pr-3 font-medium">{formatWeekRange(row.weekStart)}</td>
+                        <td className="py-2 pr-3">${(row.grossCents / 100).toFixed(2)}</td>
+                        <td className="py-2 pr-3">${(row.convertedCents / 100).toFixed(2)}</td>
                         <td className="py-2 pr-3">${(row.netCents / 100).toFixed(2)}</td>
                         <td className="py-2 pr-3">{row.payoutStatus}</td>
                         <td className="py-2 pr-3">{new Date(row.holdUntil).toLocaleDateString()}</td>

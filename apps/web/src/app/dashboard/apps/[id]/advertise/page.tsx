@@ -26,6 +26,26 @@ interface CampaignMetric {
   clicks: number
 }
 
+interface UpcomingSlotPurchaseRow {
+  purchase_id: string
+  percentage_purchased: number | string
+  price_cents: number | string
+  payment_provider: string | null
+  created_at: string
+  campaigns: { app_id: string; name: string } | Array<{ app_id: string; name: string }> | null
+  weekly_slots: { week_start: string } | Array<{ week_start: string }> | null
+}
+
+interface UpcomingSlotPurchase {
+  purchaseId: string
+  campaignName: string
+  weekStart: string
+  percentage: number
+  priceCents: number
+  paymentProvider: string
+  createdAt: string
+}
+
 const REPORTING_WEEKS = 12
 
 function toCount(value: unknown): number {
@@ -47,6 +67,23 @@ function formatWeekRange(weekStart: string): string {
   end.setUTCDate(end.getUTCDate() + 6)
 
   return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
+}
+
+function getCurrentWeekStartUTC(now: Date = new Date()): string {
+  const current = new Date(now)
+  current.setUTCHours(0, 0, 0, 0)
+  current.setUTCDate(current.getUTCDate() - current.getUTCDay())
+  return current.toISOString().split('T')[0]
+}
+
+function paymentProviderLabel(provider: string): string {
+  if (provider === 'credits') {
+    return 'Credits'
+  }
+  if (provider === 'internal') {
+    return 'Internal'
+  }
+  return 'Card'
 }
 
 export default async function AppAdvertisePage({ params }: Props) {
@@ -93,6 +130,32 @@ export default async function AppAdvertisePage({ params }: Props) {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
+  const { data: rawUpcomingPurchases, error: upcomingPurchasesError } = await (supabase as any)
+    .from('slot_purchases')
+    .select(`
+      purchase_id,
+      percentage_purchased,
+      price_cents,
+      payment_provider,
+      created_at,
+      campaigns (
+        app_id,
+        name
+      ),
+      weekly_slots (
+        week_start
+      )
+    `)
+    .eq('user_id', user.id)
+    .eq('status', 'confirmed')
+    .is('refunded_at', null)
+    .order('created_at', { ascending: false })
+    .limit(200)
+
+  if (upcomingPurchasesError) {
+    console.error('[dashboard] failed to fetch upcoming paid slots', upcomingPurchasesError)
+  }
+
   const { data: rawWeeklyMetrics, error: weeklyMetricsError } = await supabase.rpc('get_advertiser_weekly_metrics', {
     p_user_id: user.id,
     p_app_id: id,
@@ -122,6 +185,40 @@ export default async function AppAdvertisePage({ params }: Props) {
   for (const rows of campaignMetrics.values()) {
     rows.sort((left, right) => right.weekStart.localeCompare(left.weekStart))
   }
+
+  const currentWeekStart = getCurrentWeekStartUTC()
+  const upcomingPaidSlots = ((rawUpcomingPurchases ?? []) as UpcomingSlotPurchaseRow[])
+    .map((row): (UpcomingSlotPurchase & { appId: string }) | null => {
+      const campaign = Array.isArray(row.campaigns) ? row.campaigns[0] : row.campaigns
+      const slot = Array.isArray(row.weekly_slots) ? row.weekly_slots[0] : row.weekly_slots
+      if (!campaign || !slot || typeof campaign.app_id !== 'string' || typeof slot.week_start !== 'string') {
+        return null
+      }
+
+      return {
+        purchaseId: String(row.purchase_id),
+        campaignName: typeof campaign.name === 'string' ? campaign.name : 'Campaign',
+        weekStart: slot.week_start,
+        percentage: toCount(row.percentage_purchased),
+        priceCents: toCount(row.price_cents),
+        paymentProvider: typeof row.payment_provider === 'string' ? row.payment_provider : 'stripe',
+        createdAt: row.created_at,
+        appId: campaign.app_id,
+      }
+    })
+    .filter((row): row is UpcomingSlotPurchase & { appId: string } => (
+      !!row &&
+      row.appId === id &&
+      row.weekStart >= currentWeekStart
+    ))
+    .sort((left, right) => {
+      const weekCompare = left.weekStart.localeCompare(right.weekStart)
+      if (weekCompare !== 0) {
+        return weekCompare
+      }
+
+      return right.createdAt.localeCompare(left.createdAt)
+    })
 
   return (
     <div className="min-h-screen">
@@ -164,6 +261,49 @@ export default async function AppAdvertisePage({ params }: Props) {
           <h2 className="text-xl font-semibold mb-4">Book Ad Spots</h2>
           <NextWeekBooking appId={id} userId={user.id} />
         </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Upcoming Paid Slots</CardTitle>
+            <CardDescription>
+              Confirmed upcoming reservations for this app.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {upcomingPaidSlots.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-3 font-medium">Week</th>
+                      <th className="py-2 pr-3 font-medium">Campaign</th>
+                      <th className="py-2 pr-3 font-medium">Share</th>
+                      <th className="py-2 pr-3 font-medium">Amount</th>
+                      <th className="py-2 pr-3 font-medium">Paid Via</th>
+                      <th className="py-2 font-medium">Purchased</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {upcomingPaidSlots.map((slot) => (
+                      <tr key={slot.purchaseId} className="border-b last:border-0">
+                        <td className="py-2 pr-3 font-medium">{formatWeekRange(slot.weekStart)}</td>
+                        <td className="py-2 pr-3">{slot.campaignName}</td>
+                        <td className="py-2 pr-3">{slot.percentage}%</td>
+                        <td className="py-2 pr-3">${(slot.priceCents / 100).toFixed(2)}</td>
+                        <td className="py-2 pr-3">{paymentProviderLabel(slot.paymentProvider)}</td>
+                        <td className="py-2">{new Date(slot.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No confirmed upcoming paid slots yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Your Campaigns</h2>

@@ -3,6 +3,7 @@ import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/billing/stripe'
 
 export const dynamic = 'force-dynamic'
+const CHECKOUT_EXPIRY_SECONDS = 30 * 60
 
 interface RouteContext {
   params: {
@@ -103,6 +104,7 @@ export async function POST(request: Request, context: RouteContext) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer: stripeCustomerID,
+      expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRY_SECONDS,
       line_items: [
         {
           quantity: 1,
@@ -156,4 +158,3 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-

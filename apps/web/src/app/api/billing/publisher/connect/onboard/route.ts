@@ -4,10 +4,30 @@ import { getStripe } from '@/lib/billing/stripe'
 
 export const dynamic = 'force-dynamic'
 
+function toSafeReturnPath(input: unknown): string {
+  if (typeof input !== 'string') {
+    return '/dashboard'
+  }
+
+  if (!input.startsWith('/dashboard')) {
+    return '/dashboard'
+  }
+
+  return input
+}
+
 export async function POST(request: Request) {
   const user = await getAuthUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  let returnPath = '/dashboard'
+  try {
+    const body = await request.json()
+    returnPath = toSafeReturnPath(body?.returnPath)
+  } catch {
+    // Empty body is valid.
   }
 
   const supabase = createAdminClient()
@@ -53,8 +73,8 @@ export async function POST(request: Request) {
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountID,
       type: 'account_onboarding',
-      return_url: `${appBaseURL}/dashboard`,
-      refresh_url: `${appBaseURL}/dashboard`,
+      return_url: `${appBaseURL}${returnPath}`,
+      refresh_url: `${appBaseURL}${returnPath}`,
     })
 
     return NextResponse.json({
@@ -66,4 +86,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-
