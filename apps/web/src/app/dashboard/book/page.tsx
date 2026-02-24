@@ -7,6 +7,65 @@ import { ArrowLeft, Info } from '@phosphor-icons/react/dist/ssr'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { NextWeekBooking } from '@/components/booking/next-week-booking'
 
+interface BillingHistoryRow {
+  booking_intent_id: string
+  created_at: string
+  status: string
+  failure_reason: string | null
+  percentage_purchased: number | string
+  quoted_price_cents: number | string
+  credits_applied_cents: number | string
+  cash_due_cents: number | string
+  stripe_refund_id: string | null
+  campaigns: { name: string; app_id: string } | Array<{ name: string; app_id: string }> | null
+  weekly_slots: { week_start: string } | Array<{ week_start: string }> | null
+}
+
+function toCount(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+
+  return 0
+}
+
+function formatWeekRange(weekStart: string): string {
+  const start = new Date(`${weekStart}T00:00:00Z`)
+  const end = new Date(start)
+  end.setUTCDate(end.getUTCDate() + 6)
+
+  return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
+}
+
+function formatIntentStatus(status: string): string {
+  return status.replaceAll('_', ' ')
+}
+
+function intentStatusClass(status: string): string {
+  if (status === 'confirmed') {
+    return 'bg-green-500/10 text-green-600'
+  }
+
+  if (status === 'awaiting_payment' || status === 'processing') {
+    return 'bg-blue-500/10 text-blue-600'
+  }
+
+  if (status === 'refunded_capacity_conflict') {
+    return 'bg-amber-500/10 text-amber-700'
+  }
+
+  if (status === 'failed' || status === 'expired' || status === 'canceled') {
+    return 'bg-destructive/10 text-destructive'
+  }
+
+  return 'bg-muted text-muted-foreground'
+}
+
 export default async function BookPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
@@ -27,10 +86,61 @@ export default async function BookPage() {
     .eq('status', 'scheduled')
     .order('created_at', { ascending: false })
 
+  const { data: rawBillingHistory, error: billingHistoryError } = await (supabase as any)
+    .from('billing_booking_intents')
+    .select(`
+      booking_intent_id,
+      created_at,
+      status,
+      failure_reason,
+      percentage_purchased,
+      quoted_price_cents,
+      credits_applied_cents,
+      cash_due_cents,
+      stripe_refund_id,
+      campaigns (
+        name,
+        app_id
+      ),
+      weekly_slots (
+        week_start
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  if (billingHistoryError) {
+    console.error('[dashboard] failed to fetch billing history', billingHistoryError)
+  }
+
   const dedupedApps = (apps ?? []).filter((app, index, allApps) => {
     if (!app.bundle_identifier) return true
     return allApps.findIndex((candidate) => candidate.bundle_identifier === app.bundle_identifier) === index
   })
+
+  const appByID = new Map((apps ?? []).map((app) => [app.app_id as string, app.name as string]))
+  const billingHistory = ((rawBillingHistory ?? []) as BillingHistoryRow[])
+    .map((row) => {
+      const campaign = Array.isArray(row.campaigns) ? row.campaigns[0] : row.campaigns
+      const slot = Array.isArray(row.weekly_slots) ? row.weekly_slots[0] : row.weekly_slots
+      const appName = campaign?.app_id ? appByID.get(campaign.app_id) : null
+
+      return {
+        bookingIntentID: row.booking_intent_id,
+        createdAt: row.created_at,
+        status: row.status,
+        failureReason: row.failure_reason,
+        percentage: toCount(row.percentage_purchased),
+        quotedPriceCents: toCount(row.quoted_price_cents),
+        creditsAppliedCents: toCount(row.credits_applied_cents),
+        cashDueCents: toCount(row.cash_due_cents),
+        refundID: row.stripe_refund_id,
+        campaignName: campaign?.name ?? 'Campaign',
+        appName: appName ?? 'App',
+        weekStart: slot?.week_start ?? null,
+      }
+    })
 
   const hasApps = dedupedApps.length > 0
   const hasCampaigns = campaigns && campaigns.length > 0
@@ -52,6 +162,63 @@ export default async function BookPage() {
         <p className="text-muted-foreground mb-8 ml-9">
           Reserve your share of the Guild network for next week
         </p>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Billing History</CardTitle>
+            <CardDescription>
+              Recent booking attempts and payment outcomes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {billingHistory.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[980px] text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-3 font-medium">Created</th>
+                      <th className="py-2 pr-3 font-medium">Week</th>
+                      <th className="py-2 pr-3 font-medium">App</th>
+                      <th className="py-2 pr-3 font-medium">Campaign</th>
+                      <th className="py-2 pr-3 font-medium">Share</th>
+                      <th className="py-2 pr-3 font-medium">Quote</th>
+                      <th className="py-2 pr-3 font-medium">Credits</th>
+                      <th className="py-2 pr-3 font-medium">Cash</th>
+                      <th className="py-2 pr-3 font-medium">Status</th>
+                      <th className="py-2 font-medium">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {billingHistory.map((row) => (
+                      <tr key={row.bookingIntentID} className="border-b last:border-0">
+                        <td className="py-2 pr-3">{new Date(row.createdAt).toLocaleDateString()}</td>
+                        <td className="py-2 pr-3">{row.weekStart ? formatWeekRange(row.weekStart) : '-'}</td>
+                        <td className="py-2 pr-3">{row.appName}</td>
+                        <td className="py-2 pr-3">{row.campaignName}</td>
+                        <td className="py-2 pr-3">{row.percentage}%</td>
+                        <td className="py-2 pr-3">${(row.quotedPriceCents / 100).toFixed(2)}</td>
+                        <td className="py-2 pr-3">${(row.creditsAppliedCents / 100).toFixed(2)}</td>
+                        <td className="py-2 pr-3">${(row.cashDueCents / 100).toFixed(2)}</td>
+                        <td className="py-2 pr-3">
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${intentStatusClass(row.status)}`}>
+                            {formatIntentStatus(row.status)}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          {row.failureReason ?? (row.refundID ? `refund ${row.refundID}` : '-')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No booking or payment history yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {!hasApps ? (
           <Card>

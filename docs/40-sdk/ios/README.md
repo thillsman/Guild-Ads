@@ -15,6 +15,17 @@
 
 ## Integration surface
 
+### Install via Swift Package Manager
+1. In Xcode, open your app project and choose `File -> Add Package Dependencies...`
+2. Enter the package URL: `https://github.com/Guild-Ads/guild-ads-ios`
+3. Choose your version rule and add the `GuildAds` product to your app target
+
+If you use a `Package.swift` app target, add:
+
+```swift
+.package(url: "https://github.com/Guild-Ads/guild-ads-ios", branch: "main")
+```
+
 ### Default UI
 Provide a drop-in SwiftUI component:
 

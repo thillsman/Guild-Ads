@@ -352,13 +352,19 @@ export default async function AppPublishPage({ params }: Props) {
           <CardHeader>
             <CardTitle>SDK Integration</CardTitle>
             <CardDescription>
-              Use these tokens to authenticate your app with the Guild Ads SDK
+              Install the iOS SDK with Swift Package Manager and use these tokens to authenticate your app.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Swift Package Manager URL: <span className="font-mono">https://github.com/Guild-Ads/guild-ads-ios</span>
+            </p>
             <div className="bg-muted rounded-lg p-4 font-mono text-sm">
               <pre className="overflow-x-auto">
-{`import GuildAds
+{`// Xcode -> File -> Add Package Dependencies...
+// URL: https://github.com/Guild-Ads/guild-ads-ios
+
+import GuildAds
 
 // Initialize in your App's init
 GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
