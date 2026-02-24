@@ -81,6 +81,11 @@ pnpm dev
    - `guild-ads-web`:
      - `NEXT_PUBLIC_SUPABASE_URL` = your production Supabase URL
      - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your production anon key
+     - `SUPABASE_SERVICE_ROLE_KEY` = your production service role key
+     - `STRIPE_SECRET_KEY` = Stripe API secret key
+     - `STRIPE_WEBHOOK_SECRET` = Stripe webhook signing secret
+     - `APP_BASE_URL` = canonical app URL (for Stripe success/cancel + onboarding returns)
+     - `BILLING_CRON_SECRET` = shared secret for internal billing cron endpoints
 
 ### Alternative: Deploy web to Vercel
 

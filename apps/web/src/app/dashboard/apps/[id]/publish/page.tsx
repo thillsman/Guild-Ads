@@ -67,6 +67,15 @@ interface DailyStorageMetric {
   clicks: number
 }
 
+interface PublisherWeeklyEarningsRow {
+  week_start: string
+  gross_earnings_cents: number | string
+  converted_cents: number | string
+  payout_status: string
+  hold_until: string
+  paid_at: string | null
+}
+
 const REPORTING_WEEKS = 12
 const STORAGE_DAILY_WINDOW_DAYS = 14
 
@@ -171,6 +180,28 @@ export default async function AppPublishPage({ params }: Props) {
     console.error('[dashboard] failed to fetch app daily storage metrics', dailyStorageError)
   }
 
+  const { data: connectAccount, error: connectAccountError } = await (supabase as any)
+    .from('publisher_connect_accounts')
+    .select('stripe_account_id, payouts_enabled, charges_enabled, details_submitted')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (connectAccountError) {
+    console.error('[dashboard] failed to fetch publisher connect account', connectAccountError)
+  }
+
+  const { data: rawWeeklyEarnings, error: weeklyEarningsError } = await (supabase as any)
+    .from('publisher_weekly_earnings')
+    .select('week_start, gross_earnings_cents, converted_cents, payout_status, hold_until, paid_at')
+    .eq('publisher_app_id', id)
+    .eq('user_id', user.id)
+    .order('week_start', { ascending: false })
+    .limit(24)
+
+  if (weeklyEarningsError) {
+    console.error('[dashboard] failed to fetch weekly earnings', weeklyEarningsError)
+  }
+
   const weeklyTotals = ((rawWeeklyTotals ?? []) as PublisherWeeklyTotalsRow[])
     .filter((row): row is PublisherWeeklyTotalsRow => typeof row.week_start === 'string')
     .map((row): WeeklyTotals => ({
@@ -228,6 +259,49 @@ export default async function AppPublishPage({ params }: Props) {
       clicks: toCount(row.clicks),
     }))
     .sort((left, right) => right.day.localeCompare(left.day))
+
+  const weeklyEarnings = ((rawWeeklyEarnings ?? []) as PublisherWeeklyEarningsRow[])
+    .filter((row): row is PublisherWeeklyEarningsRow => typeof row.week_start === 'string')
+    .map((row) => {
+      const gross = toCount(row.gross_earnings_cents)
+      const converted = toCount(row.converted_cents)
+      return {
+        weekStart: row.week_start,
+        payoutStatus: row.payout_status,
+        holdUntil: row.hold_until,
+        paidAt: row.paid_at,
+        netCents: Math.max(0, gross - converted),
+      }
+    })
+
+  const earningsTotals = weeklyEarnings.reduce((totals, row) => {
+    totals.total += row.netCents
+
+    if (row.payoutStatus === 'paid') {
+      totals.paid += row.netCents
+      return totals
+    }
+
+    const isHeld = new Date(row.holdUntil).getTime() > Date.now()
+    if (isHeld) {
+      totals.onHold += row.netCents
+      return totals
+    }
+
+    if (row.payoutStatus === 'eligible') {
+      totals.eligible += row.netCents
+      return totals
+    }
+
+    totals.accrued += row.netCents
+    return totals
+  }, {
+    total: 0,
+    accrued: 0,
+    onHold: 0,
+    eligible: 0,
+    paid: 0,
+  })
 
   // Calculate stats
   const totalRequests = recentRequests?.length ?? 0
@@ -399,6 +473,75 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No weekly ad metrics yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Payout Accounting</CardTitle>
+            <CardDescription>
+              Weekly accrual, hold, and payout status for this app.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs uppercase text-muted-foreground tracking-wide">Accrued</p>
+                <p className="mt-1 text-lg font-semibold">${(earningsTotals.accrued / 100).toFixed(2)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs uppercase text-muted-foreground tracking-wide">On Hold</p>
+                <p className="mt-1 text-lg font-semibold">${(earningsTotals.onHold / 100).toFixed(2)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs uppercase text-muted-foreground tracking-wide">Eligible</p>
+                <p className="mt-1 text-lg font-semibold">${(earningsTotals.eligible / 100).toFixed(2)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs uppercase text-muted-foreground tracking-wide">Paid</p>
+                <p className="mt-1 text-lg font-semibold">${(earningsTotals.paid / 100).toFixed(2)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border p-3 text-sm">
+              <p className="font-medium">Stripe Connect</p>
+              {connectAccount?.stripe_account_id ? (
+                <div className="mt-2 text-muted-foreground space-y-1">
+                  <p>Account: <span className="font-mono text-xs">{connectAccount.stripe_account_id}</span></p>
+                  <p>Details submitted: {connectAccount.details_submitted ? 'Yes' : 'No'}</p>
+                  <p>Payouts enabled: {connectAccount.payouts_enabled ? 'Yes' : 'No'}</p>
+                </div>
+              ) : (
+                <p className="mt-2 text-muted-foreground">No connected Stripe payout account yet.</p>
+              )}
+            </div>
+
+            {weeklyEarnings.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-3 font-medium">Week</th>
+                      <th className="py-2 pr-3 font-medium">Net Earnings</th>
+                      <th className="py-2 pr-3 font-medium">Status</th>
+                      <th className="py-2 pr-3 font-medium">Hold Until</th>
+                      <th className="py-2 font-medium">Paid At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {weeklyEarnings.map((row) => (
+                      <tr key={row.weekStart} className="border-b last:border-0">
+                        <td className="py-2 pr-3 font-medium">{formatWeekRange(row.weekStart)}</td>
+                        <td className="py-2 pr-3">${(row.netCents / 100).toFixed(2)}</td>
+                        <td className="py-2 pr-3">{row.payoutStatus}</td>
+                        <td className="py-2 pr-3">{new Date(row.holdUntil).toLocaleDateString()}</td>
+                        <td className="py-2">{row.paidAt ? new Date(row.paidAt).toLocaleDateString() : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>

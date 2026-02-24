@@ -28,6 +28,14 @@ export default async function DashboardPage() {
     return allApps.findIndex((candidate) => candidate.bundle_identifier === app.bundle_identifier) === index
   })
 
+  const { data: internalPolicy } = await (supabase as any)
+    .from('internal_account_policies')
+    .select('active, can_manage_internal')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const canManageInternal = internalPolicy?.active === true && internalPolicy?.can_manage_internal === true
+
   return (
     <div className="min-h-screen">
       <DashboardHeader user={user} />
@@ -45,12 +53,19 @@ export default async function DashboardPage() {
               Add your iOS apps to advertise them or show ads in them.
             </p>
           </div>
-          <Button asChild>
-            <Link href="/dashboard/apps/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add App
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {canManageInternal && (
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/internal/billing">Internal Billing</Link>
+              </Button>
+            )}
+            <Button asChild>
+              <Link href="/dashboard/apps/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add App
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {dedupedApps.length > 0 ? (

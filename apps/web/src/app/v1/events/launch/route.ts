@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid app token or app_id' }, { status: 401 })
     }
 
-    const neverNoFill = isNoFillExemptPublisherUser(publisherApp.userId)
+    const neverNoFill = await isNoFillExemptPublisherUser(supabase, publisherApp.userId)
     const origin = resolveRequestOrigin(request)
     const ads: Record<string, unknown> = {}
     const deviceIdHash = userID ? hashValue(userID) : null

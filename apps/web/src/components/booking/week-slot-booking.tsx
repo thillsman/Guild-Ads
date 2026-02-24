@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SpinnerGap, CalendarCheck, Users, CurrencyDollar, Info, Plus, CaretDown } from '@phosphor-icons/react'
@@ -42,9 +41,16 @@ export function WeekSlotBooking({
   isNextWeek = false,
 }: WeekSlotBookingProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [percentage, setPercentage] = useState(10)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('')
   const [showCampaignSelect, setShowCampaignSelect] = useState(false)
+  const [applyCredits, setApplyCredits] = useState(true)
+  const [bookingIntentID, setBookingIntentID] = useState<string | null>(null)
+  const [bookingStatus, setBookingStatus] = useState<string | null>(null)
+  const [spendableCreditsCents, setSpendableCreditsCents] = useState(0)
+  const [latestCreditsAppliedCents, setLatestCreditsAppliedCents] = useState<number | null>(null)
+  const [latestCashDueCents, setLatestCashDueCents] = useState<number | null>(null)
   const [booking, setBooking] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,7 +83,89 @@ export function WeekSlotBooking({
     day: 'numeric'
   })
 
-  const selectedCampaign = campaigns.find(c => c.campaign_id === selectedCampaignId)
+  useEffect(() => {
+    const intentID = searchParams.get('booking_intent')
+    if (intentID) {
+      setBookingIntentID(intentID)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchCredits() {
+      try {
+        const res = await fetch('/api/billing/credits/balance', { cache: 'no-store' })
+        if (!res.ok) return
+        const payload = await res.json()
+        if (cancelled) return
+        if (typeof payload?.spendableCents === 'number') {
+          setSpendableCreditsCents(payload.spendableCents)
+        }
+      } catch {
+        // Ignore credit fetch errors.
+      }
+    }
+
+    fetchCredits()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!bookingIntentID) {
+      return
+    }
+
+    let cancelled = false
+    let intervalID: ReturnType<typeof setInterval> | null = null
+
+    async function pollIntent() {
+      try {
+        const res = await fetch(`/api/billing/booking-intents/${bookingIntentID}`, {
+          cache: 'no-store',
+        })
+        if (!res.ok) {
+          return
+        }
+
+        const payload = await res.json()
+        if (cancelled) {
+          return
+        }
+
+        if (typeof payload?.status === 'string') {
+          setBookingStatus(payload.status)
+          if (payload.status === 'confirmed') {
+            router.refresh()
+            if (intervalID) {
+              clearInterval(intervalID)
+              intervalID = null
+            }
+          }
+          if (['failed', 'expired', 'refunded_capacity_conflict', 'canceled'].includes(payload.status)) {
+            if (intervalID) {
+              clearInterval(intervalID)
+              intervalID = null
+            }
+          }
+        }
+      } catch {
+        // Ignore poll errors and retry.
+      }
+    }
+
+    pollIntent()
+    intervalID = setInterval(pollIntent, 2500)
+
+    return () => {
+      cancelled = true
+      if (intervalID) {
+        clearInterval(intervalID)
+      }
+    }
+  }, [bookingIntentID, router])
 
   const bookSlot = async () => {
     if (!selectedCampaignId) {
@@ -85,45 +173,76 @@ export function WeekSlotBooking({
       return
     }
 
+    if (!isNextWeek) {
+      setError('Only next week bookings are purchasable right now.')
+      return
+    }
+
     setBooking(true)
     setError(null)
+    setBookingStatus('processing')
 
     try {
-      const supabase = createClient()
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setError('You must be logged in to book.')
-        return
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = await (supabase as any).from('slot_purchases').insert({
-        slot_id: slotId,
-        user_id: user.id,
-        campaign_id: selectedCampaignId,
-        percentage_purchased: percentage,
-        price_cents: costCents,
-        status: 'confirmed',
+      const createIntentRes = await fetch('/api/billing/booking-intents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId: selectedCampaignId,
+          slotId,
+          percentage,
+          applyCredits,
+        }),
       })
 
-      if (insertError) {
-        setError(insertError.message)
+      const createIntentPayload = await createIntentRes.json()
+      if (!createIntentRes.ok || typeof createIntentPayload.bookingIntentId !== 'string') {
+        setError(createIntentPayload?.error ?? 'Failed to create booking intent.')
+        setBookingStatus('failed')
         return
       }
 
-      // Update campaign status to scheduled
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from('campaigns')
-        .update({ status: 'scheduled' })
-        .eq('campaign_id', selectedCampaignId)
+      const intentID = createIntentPayload.bookingIntentId as string
+      setBookingIntentID(intentID)
+      setBookingStatus(typeof createIntentPayload.status === 'string' ? createIntentPayload.status : 'processing')
+      setLatestCreditsAppliedCents(
+        typeof createIntentPayload.creditsAppliedCents === 'number'
+          ? createIntentPayload.creditsAppliedCents
+          : null
+      )
+      setLatestCashDueCents(
+        typeof createIntentPayload.cashDueCents === 'number'
+          ? createIntentPayload.cashDueCents
+          : null
+      )
 
-      setShowCampaignSelect(false)
-      setSelectedCampaignId('')
-      router.refresh()
-    } catch (err) {
+      if (createIntentPayload.requiresCheckout === true) {
+        const checkoutRes = await fetch(`/api/billing/booking-intents/${intentID}/checkout`, {
+          method: 'POST',
+        })
+        const checkoutPayload = await checkoutRes.json()
+
+        if (!checkoutRes.ok || typeof checkoutPayload.checkoutURL !== 'string') {
+          setError(checkoutPayload?.error ?? 'Failed to launch checkout.')
+          setBookingStatus('failed')
+          return
+        }
+
+        setBookingStatus('awaiting_payment')
+        window.location.href = checkoutPayload.checkoutURL
+        return
+      }
+
+        setShowCampaignSelect(false)
+        setSelectedCampaignId('')
+        const creditsAfterBooking = spendableCreditsCents - (typeof createIntentPayload.creditsAppliedCents === 'number' ? createIntentPayload.creditsAppliedCents : 0)
+        setSpendableCreditsCents(Math.max(0, creditsAfterBooking))
+      if (createIntentPayload.status === 'confirmed') {
+        setBookingStatus('confirmed')
+        router.refresh()
+      }
+    } catch {
       setError('Failed to book slot. Please try again.')
+      setBookingStatus('failed')
     } finally {
       setBooking(false)
     }
@@ -287,6 +406,30 @@ export function WeekSlotBooking({
           </div>
         </div>
 
+        <div className="p-4 border rounded-lg text-sm space-y-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={applyCredits}
+              onChange={(event) => setApplyCredits(event.target.checked)}
+              disabled={booking || !isNextWeek}
+            />
+            <span>Apply credits before card payment</span>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Credits are applied first. Any remainder is paid via Stripe checkout.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Spendable credits: <span className="font-medium text-foreground">${(spendableCreditsCents / 100).toFixed(2)}</span>
+          </p>
+          {latestCreditsAppliedCents !== null && latestCashDueCents !== null && (
+            <p className="text-xs text-muted-foreground">
+              Last quote: credits applied <span className="font-medium text-foreground">${(latestCreditsAppliedCents / 100).toFixed(2)}</span>{' '}
+              · cash due <span className="font-medium text-foreground">${(latestCashDueCents / 100).toFixed(2)}</span>
+            </p>
+          )}
+        </div>
+
         {/* Pricing Info */}
         <div className="p-4 bg-muted/50 rounded-lg text-sm space-y-3">
           <div className="flex items-start gap-2">
@@ -351,9 +494,15 @@ export function WeekSlotBooking({
           <p className="text-sm text-destructive">{error}</p>
         )}
 
+        {bookingStatus && (
+          <p className="text-sm text-muted-foreground">
+            Booking status: <span className="font-medium text-foreground">{bookingStatus.replaceAll('_', ' ')}</span>
+          </p>
+        )}
+
         <Button
           onClick={bookSlot}
-          disabled={booking || maxPercentage < 1 || (showCampaignSelect && !selectedCampaignId)}
+          disabled={booking || maxPercentage < 1 || (showCampaignSelect && !selectedCampaignId) || !isNextWeek}
           className="w-full"
           size="lg"
         >
@@ -362,6 +511,8 @@ export function WeekSlotBooking({
               <SpinnerGap className="h-4 w-4 mr-2 animate-spin" />
               Booking...
             </>
+          ) : !isNextWeek ? (
+            'Planning Only (Next Week Purchases Only)'
           ) : maxPercentage < 1 ? (
             'Sold Out'
           ) : showCampaignSelect && selectedCampaignId ? (

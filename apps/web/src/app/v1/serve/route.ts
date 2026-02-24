@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid app token or app_id' }, { status: 401 })
     }
 
-    const neverNoFill = isNoFillExemptPublisherUser(publisherApp.userId)
+    const neverNoFill = await isNoFillExemptPublisherUser(supabase, publisherApp.userId)
 
     // Hash the user ID for privacy
     const deviceIdHash = userID ? hashValue(userID) : null

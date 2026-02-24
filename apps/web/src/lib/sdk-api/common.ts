@@ -18,8 +18,6 @@ export interface PublisherApp {
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-const NO_FILL_EXEMPT_USER_ID = 'd6ed936c-953c-484a-818f-d63aba9c3786'
-
 export function hashValue(value: string): string {
   return createHash('sha256').update(value).digest('hex')
 }
@@ -31,8 +29,25 @@ export function resolveServeWeekStart(date: Date = new Date()): string {
   return d.toISOString().split('T')[0]
 }
 
-export function isNoFillExemptPublisherUser(userId: string | null | undefined): boolean {
-  return userId === NO_FILL_EXEMPT_USER_ID
+export async function isNoFillExemptPublisherUser(
+  supabase: SupabaseClient<Database>,
+  userId: string | null | undefined
+): Promise<boolean> {
+  if (!userId) {
+    return false
+  }
+
+  const { data, error } = await (supabase as any)
+    .from('internal_account_policies')
+    .select('active, no_fill_exempt')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error || !data) {
+    return false
+  }
+
+  return data.active === true && data.no_fill_exempt === true
 }
 
 export async function readJSONBody(request: Request): Promise<JsonObject> {
