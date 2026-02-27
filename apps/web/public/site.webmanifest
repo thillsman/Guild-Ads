@@ -1,7 +1,7 @@
 {
   "name": "Guild Ads",
   "short_name": "Guild Ads",
-  "description": "Privacy-friendly sponsor cards for indie apps",
+  "description": "Easy, privacy-friendly ad network for indie apps",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

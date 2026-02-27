@@ -48,11 +48,12 @@ export default function Home() {
                 Built for Indie Apps
               </p>
               <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Reach new users, earn weekly revenue, and fund ad-free upgrades.
+                Grow downloads, earn revenue, and give users a clean upgrade path.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
-                Guild Ads is a privacy-first ad network where advertisers buy a weekly share of the network,
-                and publishers earn based on the users they reach inside their own app. No cross-app tracking.
+                Guild Ads is an easy, privacy-friendly ad network for indie apps. Run good-looking ads in
+                other apps to get installs. Show ads in your own app to earn weekly payouts. Do both and build
+                a simple growth loop without cross-app tracking.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Button size="lg" asChild>
@@ -67,25 +68,25 @@ export default function Home() {
             <div className="mt-12 grid gap-4 md:grid-cols-3">
               <Card className="border-primary/20 bg-background/80">
                 <CardHeader>
-                  <CardTitle className="text-base">Advertisers Buy Weekly Share</CardTitle>
+                  <CardTitle className="text-base">Make money as a publisher</CardTitle>
                   <CardDescription>
-                    Buy 30% of the network, get shown 30% of the time that week.
+                    Show clean, native-feeling ads in your app and earn weekly payouts from network spend.
                   </CardDescription>
                 </CardHeader>
               </Card>
               <Card className="border-primary/20 bg-background/80">
                 <CardHeader>
-                  <CardTitle className="text-base">Publishers Earn by User Reach</CardTitle>
+                  <CardTitle className="text-base">Get downloads as an advertiser</CardTitle>
                   <CardDescription>
-                    Get paid by your share of network app-users reached in your placements.
+                    Put your app in front of users in other indie apps and buy weekly share for predictable delivery.
                   </CardDescription>
                 </CardHeader>
               </Card>
               <Card className="border-primary/20 bg-background/80">
                 <CardHeader>
-                  <CardTitle className="text-base">70% Paid Out Weekly</CardTitle>
+                  <CardTitle className="text-base">Use both sides for a flywheel</CardTitle>
                   <CardDescription>
-                    70% of weekly advertiser spend is split directly among publishers.
+                    Earn from your audience, reinvest in ads, and fund ad-free subscription upgrades for your power users.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -128,7 +129,7 @@ export default function Home() {
                 <Broadcast className="h-9 w-9 text-primary" weight="duotone" />
                 <CardTitle className="mt-3 text-lg">3. Publishers Show Ads</CardTitle>
                 <CardDescription>
-                  Add one or more placements with the SDK and start serving sponsor cards in your app.
+                  Add one or more placements with the SDK and start serving ads in your app.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -169,7 +170,9 @@ export default function Home() {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle>For Publishers</CardTitle>
-                <CardDescription>Earn a new line of revenue without compromising user trust.</CardDescription>
+                <CardDescription>
+                  Earn weekly ad revenue and keep a clear path to ad-free subscriptions.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-muted-foreground">
                 <p>
@@ -177,7 +180,7 @@ export default function Home() {
                   you receive <span className="font-semibold text-foreground">30%</span> of the publisher payout pool.
                 </p>
                 <p>
-                  Distinct users are counted <span className="font-semibold text-foreground">within each app</span> to avoid cross-app tracking.
+                  Distinct users are counted <span className="font-semibold text-foreground">within each app</span> to avoid cross-app tracking, so you can monetize responsibly.
                 </p>
               </CardContent>
             </Card>
@@ -206,8 +209,8 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl px-4 py-16 text-center">
             <h2 className="text-3xl font-bold tracking-tight">Grow and Monetize Without Creepy Tracking</h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              Join the indie ad network designed to help you reach new users, add weekly revenue,
-              and fund upgrades that remove ads for your most engaged customers.
+              Guild Ads helps indie teams grow in both directions: advertise to get users, publish to earn,
+              and use the upside to fund upgrades that remove ads for your most engaged customers.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" asChild>
