@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, MagnifyingGlass, SpinnerGap, Check } from '@phosphor-icons/react'
+import { MagnifyingGlass, SpinnerGap, Check } from '@phosphor-icons/react'
 
 interface AppMetadata {
   appStoreId: string
@@ -138,24 +137,11 @@ export default function AddAppPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-2">Add App</h1>
-        <p className="text-muted-foreground mb-8">
+    <main className="max-w-2xl">
+      <h1 className="text-3xl font-bold mb-2">Add App</h1>
+      <p className="text-muted-foreground mb-8">
           Enter your app&apos;s App Store URL to get started.
-        </p>
+      </p>
 
         <Card>
           <CardHeader>
@@ -255,7 +241,6 @@ export default function AddAppPage() {
             </CardContent>
           </Card>
         )}
-      </main>
-    </div>
+    </main>
   )
 }

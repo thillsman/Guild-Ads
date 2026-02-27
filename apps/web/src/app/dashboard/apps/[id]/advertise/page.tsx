@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Plus, ChartLine, Eye, CalendarCheck } from '@phosphor-icons/react/dist/ssr'
+import { Plus, ChartLine, Eye, CalendarCheck } from '@phosphor-icons/react/dist/ssr'
 import { NextWeekBooking } from '@/components/booking/next-week-booking'
 
 interface Props {
@@ -221,21 +221,8 @@ export default async function AppAdvertisePage({ params }: Props) {
     })
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-start gap-4 mb-8">
+    <main className="max-w-4xl">
+      <div className="flex items-start gap-4 mb-8">
           {app.icon_url ? (
             <img
               src={app.icon_url}
@@ -254,15 +241,14 @@ export default async function AppAdvertisePage({ params }: Props) {
               {app.bundle_identifier}
             </p>
           </div>
-        </div>
+      </div>
 
-        {/* Book Next Week */}
-        <div className="mb-8">
+      <section id="advertise-payment" className="mb-8 scroll-mt-24">
           <h2 className="text-xl font-semibold mb-4">Book Ad Spots</h2>
           <NextWeekBooking appId={id} userId={user.id} />
-        </div>
+      </section>
 
-        <Card className="mb-8">
+      <Card className="mb-8">
           <CardHeader>
             <CardTitle>Upcoming Paid Slots</CardTitle>
             <CardDescription>
@@ -303,8 +289,9 @@ export default async function AppAdvertisePage({ params }: Props) {
               </p>
             )}
           </CardContent>
-        </Card>
+      </Card>
 
+      <section id="ad-performance" className="scroll-mt-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Your Campaigns</h2>
           <Button asChild>
@@ -315,7 +302,7 @@ export default async function AppAdvertisePage({ params }: Props) {
           </Button>
         </div>
 
-        {campaigns && campaigns.length > 0 ? (
+      {campaigns && campaigns.length > 0 ? (
           <div className="grid gap-4">
             {campaigns.map((campaign) => {
               const booking = campaign.slot_purchases?.[0]
@@ -440,8 +427,8 @@ export default async function AppAdvertisePage({ params }: Props) {
               </Button>
             </CardContent>
           </Card>
-        )}
-      </main>
-    </div>
+      )}
+      </section>
+    </main>
   )
 }

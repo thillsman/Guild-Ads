@@ -4,7 +4,7 @@ import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Key, ChartLine, CheckCircle, XCircle } from '@phosphor-icons/react/dist/ssr'
+import { Key, ChartLine, CheckCircle, XCircle } from '@phosphor-icons/react/dist/ssr'
 import { CreateTokenButton } from './create-token-button'
 import { ConnectOnboardingCard } from './connect-onboarding-card'
 import { TokenList } from './token-list'
@@ -313,21 +313,8 @@ export default async function AppPublishPage({ params }: Props) {
   const clickedRequests = recentRequests?.filter(r => r.clicked).length ?? 0
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-start gap-4 mb-8">
+    <main className="max-w-4xl">
+      <div className="flex items-start gap-4 mb-8">
           {app.icon_url ? (
             <img
               src={app.icon_url}
@@ -346,7 +333,7 @@ export default async function AppPublishPage({ params }: Props) {
               {app.bundle_identifier}
             </p>
           </div>
-        </div>
+      </div>
 
         <Card className="mb-6">
           <CardHeader>
@@ -446,7 +433,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
           </CardContent>
         </Card>
 
-        <Card className="mb-6">
+        <Card id="publisher-performance" className="mb-6 scroll-mt-24">
           <CardHeader>
             <CardTitle>Weekly Performance</CardTitle>
             <CardDescription>
@@ -486,7 +473,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
           </CardContent>
         </Card>
 
-        <Card className="mb-6">
+        <Card id="publish-payout" className="mb-6 scroll-mt-24">
           <CardHeader>
             <CardTitle>Payout Accounting</CardTitle>
             <CardDescription>
@@ -713,7 +700,6 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
             </CardContent>
           </Card>
         )}
-      </main>
-    </div>
+    </main>
   )
 }

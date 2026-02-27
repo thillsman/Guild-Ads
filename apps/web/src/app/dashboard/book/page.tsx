@@ -3,8 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Info } from '@phosphor-icons/react/dist/ssr'
-import { DashboardHeader } from '@/components/dashboard/header'
+import { Info } from '@phosphor-icons/react/dist/ssr'
 import { NextWeekBooking } from '@/components/booking/next-week-booking'
 
 interface BillingHistoryRow {
@@ -146,24 +145,15 @@ export default async function BookPage() {
   const hasCampaigns = campaigns && campaigns.length > 0
 
   return (
-    <div className="min-h-screen">
-      <DashboardHeader user={user} />
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center gap-4 mb-2">
-          <Link
-            href="/dashboard"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <h1 className="text-3xl font-bold">Book Ad Spots</h1>
-        </div>
-        <p className="text-muted-foreground mb-8 ml-9">
+    <main className="max-w-4xl space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Book Ad Spots</h1>
+        <p className="text-muted-foreground">
           Reserve your share of the Guild network for next week
         </p>
+      </div>
 
-        <Card className="mb-8">
+      <Card>
           <CardHeader>
             <CardTitle>Billing History</CardTitle>
             <CardDescription>
@@ -340,7 +330,6 @@ export default async function BookPage() {
             </p>
           </CardContent>
         </Card>
-      </main>
-    </div>
+    </main>
   )
 }

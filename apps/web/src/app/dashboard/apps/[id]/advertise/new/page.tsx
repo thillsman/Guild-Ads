@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, SpinnerGap, Check } from '@phosphor-icons/react'
+import { SpinnerGap, Check } from '@phosphor-icons/react'
 
 interface AppData {
   app_id: string
@@ -126,26 +125,13 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link
-            href={`/dashboard/apps/${appId}/advertise`}
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Campaigns
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-2">Create Campaign</h1>
-        <p className="text-muted-foreground mb-8">
+    <main className="max-w-2xl">
+      <h1 className="text-3xl font-bold mb-2">Create Campaign</h1>
+      <p className="text-muted-foreground mb-8">
           Create ad content for your app. You can book ad spots after creating.
-        </p>
+      </p>
 
-        <div className="space-y-6">
+      <div className="space-y-6">
           {/* Campaign Details */}
           <Card>
             <CardHeader>
@@ -256,8 +242,7 @@ export default function NewCampaignPage() {
               </>
             )}
           </Button>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }

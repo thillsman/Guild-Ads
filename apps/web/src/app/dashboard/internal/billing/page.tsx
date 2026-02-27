@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
-import { DashboardHeader } from '@/components/dashboard/header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { InternalBillingControls } from './internal-billing-controls'
 
@@ -22,22 +21,18 @@ export default async function InternalBillingPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <DashboardHeader user={user} />
-      <main className="container mx-auto max-w-4xl px-4 py-8 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Internal Billing Controls</CardTitle>
-            <CardDescription>
-              Manage internal account policies and promotional credit grants.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <InternalBillingControls />
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+    <main className="max-w-4xl space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Internal Billing Controls</CardTitle>
+          <CardDescription>
+            Manage internal account policies and promotional credit grants.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <InternalBillingControls />
+        </CardContent>
+      </Card>
+    </main>
   )
 }
-
