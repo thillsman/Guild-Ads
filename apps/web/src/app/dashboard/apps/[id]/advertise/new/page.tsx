@@ -100,7 +100,7 @@ export default function NewCampaignPage() {
           body: body.trim() || null,
           cta_text: 'View in App Store',
           destination_url: destinationUrl.trim(),
-          status: 'draft',
+          status: 'scheduled',
         })
 
       if (campaignError) {
