@@ -169,6 +169,7 @@ export type Database = {
           cta_text: string | null
           destination_url: string | null
           headline: string | null
+          icon_url: string | null
           name: string
           status: string
           updated_at: string
@@ -182,6 +183,7 @@ export type Database = {
           cta_text?: string | null
           destination_url?: string | null
           headline?: string | null
+          icon_url?: string | null
           name: string
           status?: string
           updated_at?: string
@@ -195,6 +197,7 @@ export type Database = {
           cta_text?: string | null
           destination_url?: string | null
           headline?: string | null
+          icon_url?: string | null
           name?: string
           status?: string
           updated_at?: string

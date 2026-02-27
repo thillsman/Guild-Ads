@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,18 +9,25 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SpinnerGap, Check } from '@phosphor-icons/react'
 
-interface AppData {
-  app_id: string
+interface CampaignData {
+  campaign_id: string
   name: string
-  subtitle: string | null
+  headline: string | null
+  body: string | null
+  destination_url: string | null
   icon_url: string | null
-  app_store_url: string | null
 }
 
-export default function NewCampaignPage() {
-  const router = useRouter()
+interface AppData {
+  icon_url: string | null
+}
+
+export default function EditCampaignPage() {
   const params = useParams()
+  const router = useRouter()
+
   const appId = params.id as string
+  const campaignId = params.campaignId as string
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -33,43 +40,47 @@ export default function NewCampaignPage() {
   const [iconUrl, setIconUrl] = useState('')
 
   useEffect(() => {
-    async function fetchData() {
+    async function loadCampaign() {
       const supabase = createClient()
 
-      const { data: appData, error: appError } = await supabase
-        .from('apps')
-        .select('app_id, name, subtitle, icon_url, app_store_url')
+      const { data: campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('campaign_id, name, headline, body, destination_url, icon_url')
+        .eq('campaign_id', campaignId)
         .eq('app_id', appId)
-        .single<AppData>()
+        .single<CampaignData>()
 
-      if (appError || !appData) {
-        setError('Could not load app data')
+      if (campaignError || !campaign) {
+        setError('Could not load campaign.')
         setLoading(false)
         return
       }
 
-      setName(`${appData.name} Campaign`)
-      setHeadline(appData.name)
-      setBody(appData.subtitle || '')
-      setDestinationUrl(appData.app_store_url || '')
-      setIconUrl(appData.icon_url || '')
+      const { data: app } = await supabase
+        .from('apps')
+        .select('icon_url')
+        .eq('app_id', appId)
+        .single<AppData>()
+
+      setName(campaign.name || '')
+      setHeadline(campaign.headline || '')
+      setBody(campaign.body || '')
+      setDestinationUrl(campaign.destination_url || '')
+      setIconUrl(campaign.icon_url || app?.icon_url || '')
       setLoading(false)
     }
 
-    fetchData()
-  }, [appId])
+    loadCampaign()
+  }, [appId, campaignId])
 
-  const createCampaign = async () => {
-    if (!name.trim()) {
-      setError('Please enter a campaign name')
-      return
-    }
+  const saveCampaign = async () => {
     if (!headline.trim()) {
       setError('Please enter a title')
       return
     }
+
     if (!destinationUrl.trim()) {
-      setError('Please enter a destination URL')
+      setError('Please enter a linked URL')
       return
     }
 
@@ -78,37 +89,27 @@ export default function NewCampaignPage() {
 
     try {
       const supabase = createClient()
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setError('You must be logged in to create a campaign.')
-        return
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: campaignError } = await (supabase as any)
+      const { error: updateError } = await (supabase as any)
         .from('campaigns')
-        .insert({
-          user_id: user.id,
-          app_id: appId,
-          name: name.trim(),
+        .update({
+          name: name.trim() || 'Campaign',
           headline: headline.trim(),
           body: body.trim() || null,
-          icon_url: iconUrl.trim() || null,
-          cta_text: 'View in App Store',
           destination_url: destinationUrl.trim(),
-          status: 'scheduled',
+          icon_url: iconUrl.trim() || null,
         })
+        .eq('campaign_id', campaignId)
+        .eq('app_id', appId)
 
-      if (campaignError) {
-        setError(campaignError.message)
+      if (updateError) {
+        setError(updateError.message)
         return
       }
 
       router.push(`/dashboard/apps/${appId}/advertise`)
       router.refresh()
     } catch {
-      setError('Failed to create campaign. Please try again.')
+      setError('Failed to update campaign. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -124,9 +125,9 @@ export default function NewCampaignPage() {
 
   return (
     <main className="max-w-2xl">
-      <h1 className="mb-2 text-3xl font-bold">Create Campaign</h1>
+      <h1 className="mb-2 text-3xl font-bold">Edit Campaign Creative</h1>
       <p className="mb-8 text-muted-foreground">
-        Create ad content for your app. You can book ad spots after creating.
+        Update the icon, title, subtitle, and linked URL shown in your campaign.
       </p>
 
       <div className="space-y-6">
@@ -134,21 +135,18 @@ export default function NewCampaignPage() {
           <CardHeader>
             <CardTitle>Campaign Details</CardTitle>
             <CardDescription>
-              Give your campaign a name to identify it
+              Internal campaign label for your dashboard.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label htmlFor="name">Campaign Name</Label>
+              <Label htmlFor="campaign-name">Campaign Name</Label>
               <Input
-                id="name"
+                id="campaign-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="e.g., Summer Launch Campaign"
+                placeholder="Campaign name"
               />
-              <p className="text-xs text-muted-foreground">
-                This is for your reference only.
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -157,7 +155,7 @@ export default function NewCampaignPage() {
           <CardHeader>
             <CardTitle>Creative</CardTitle>
             <CardDescription>
-              Customize your icon, title, subtitle, and linked URL.
+              What users see in the ad card.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -173,33 +171,29 @@ export default function NewCampaignPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="headline">Title</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
-                id="headline"
+                id="title"
                 value={headline}
                 onChange={(event) => setHeadline(event.target.value)}
-                placeholder="Your app name"
                 maxLength={50}
               />
-              <p className="text-xs text-muted-foreground">{headline.length}/50</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="body">Subtitle (optional)</Label>
+              <Label htmlFor="subtitle">Subtitle (optional)</Label>
               <Input
-                id="body"
+                id="subtitle"
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="A short description"
                 maxLength={100}
               />
-              <p className="text-xs text-muted-foreground">{body.length}/100</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="url">Linked URL</Label>
+              <Label htmlFor="linked-url">Linked URL</Label>
               <Input
-                id="url"
+                id="linked-url"
                 type="url"
                 value={destinationUrl}
                 onChange={(event) => setDestinationUrl(event.target.value)}
@@ -212,7 +206,6 @@ export default function NewCampaignPage() {
         <Card>
           <CardHeader>
             <CardTitle>Preview</CardTitle>
-            <CardDescription>How your ad will appear</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-xl border bg-muted/30 p-4">
@@ -224,7 +217,7 @@ export default function NewCampaignPage() {
                   <div className="h-14 w-14 flex-shrink-0 rounded-xl bg-muted" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{headline || 'Your app name'}</p>
+                  <p className="font-semibold">{headline || 'Campaign title'}</p>
                   {body && <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{body}</p>}
                   <Button size="sm" className="mt-2">View in App Store</Button>
                 </div>
@@ -235,16 +228,16 @@ export default function NewCampaignPage() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button onClick={createCampaign} disabled={saving} className="w-full" size="lg">
+        <Button onClick={saveCampaign} disabled={saving} className="w-full" size="lg">
           {saving ? (
             <>
               <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
-              Creating...
+              Saving...
             </>
           ) : (
             <>
               <Check className="mr-2 h-4 w-4" />
-              Create Campaign
+              Save Changes
             </>
           )}
         </Button>

@@ -1,11 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { type ChangeEvent, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 
+interface SidebarApp {
+  app_id: string
+  name: string
+}
+
 interface DashboardSidebarProps {
+  apps: SidebarApp[]
   defaultAppId: string | null
 }
 
@@ -15,71 +21,138 @@ interface NavItem {
   active: boolean
 }
 
-export function DashboardSidebar({ defaultAppId }: DashboardSidebarProps) {
-  const pathname = usePathname()
-  const [hash, setHash] = useState('')
+type AppSection = 'overview' | 'advertise' | 'ad-performance' | 'publish' | 'publisher-performance'
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const syncHash = () => setHash(window.location.hash)
-    syncHash()
-    window.addEventListener('hashchange', syncHash)
-    return () => window.removeEventListener('hashchange', syncHash)
-  }, [])
+function getCurrentSection(pathname: string): AppSection {
+  if (pathname === '/dashboard') {
+    return 'overview'
+  }
+
+  if (/^\/dashboard\/apps\/[^/]+\/ad-performance(?:\/|$)/.test(pathname)) {
+    return 'ad-performance'
+  }
+
+  if (/^\/dashboard\/apps\/[^/]+\/publisher-performance(?:\/|$)/.test(pathname)) {
+    return 'publisher-performance'
+  }
+
+  if (/^\/dashboard\/apps\/[^/]+\/publish(?:\/|$)/.test(pathname)) {
+    return 'publish'
+  }
+
+  if (/^\/dashboard\/apps\/[^/]+\/advertise(?:\/|$)/.test(pathname)) {
+    return 'advertise'
+  }
+
+  return 'overview'
+}
+
+function routeForSection(appId: string, section: AppSection): string {
+  switch (section) {
+    case 'ad-performance':
+      return `/dashboard/apps/${appId}/ad-performance`
+    case 'publish':
+      return `/dashboard/apps/${appId}/publish`
+    case 'publisher-performance':
+      return `/dashboard/apps/${appId}/publisher-performance`
+    case 'advertise':
+      return `/dashboard/apps/${appId}/advertise`
+    case 'overview':
+    default:
+      return `/dashboard/apps/${appId}/advertise`
+  }
+}
+
+export function DashboardSidebar({ apps, defaultAppId }: DashboardSidebarProps) {
+  const pathname = usePathname()
+  const router = useRouter()
 
   const routeAppId = useMemo(() => {
-    const match = pathname.match(/^\/dashboard\/apps\/([^/]+)/)
+    const match = pathname.match(
+      /^\/dashboard\/apps\/([^/]+)\/(?:advertise|ad-performance|publish|publisher-performance)(?:\/|$)/,
+    )
     return match?.[1] ?? null
   }, [pathname])
 
   const activeAppId = routeAppId ?? defaultAppId
   const hasApp = !!activeAppId
+  const currentSection = getCurrentSection(pathname)
 
   const advertisePath = hasApp ? `/dashboard/apps/${activeAppId}/advertise` : '/dashboard/apps/new'
+  const adPerformancePath = hasApp ? `/dashboard/apps/${activeAppId}/ad-performance` : '/dashboard/apps/new'
   const publishPath = hasApp ? `/dashboard/apps/${activeAppId}/publish` : '/dashboard/apps/new'
+  const publisherPerformancePath = hasApp ? `/dashboard/apps/${activeAppId}/publisher-performance` : '/dashboard/apps/new'
 
-  const isOverview = pathname === '/dashboard'
-  const isAdvertise = /^\/dashboard\/apps\/[^/]+\/advertise/.test(pathname)
-  const isPublish = /^\/dashboard\/apps\/[^/]+\/publish/.test(pathname)
-  const isAdPerformanceAnchor = hash === '#ad-performance'
-  const isPublisherPerformanceAnchor = hash === '#publisher-performance'
+  const onSelectApp = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value
+    if (value === '__new__') {
+      router.push('/dashboard/apps/new')
+      return
+    }
+
+    if (!value) {
+      return
+    }
+
+    router.push(routeForSection(value, currentSection))
+  }
 
   const topItems: NavItem[] = [
     {
       label: 'App Overview',
       href: '/dashboard',
-      active: isOverview,
+      active: pathname === '/dashboard',
     },
   ]
 
   const advertiseItems: NavItem[] = [
     {
-      label: 'Advertise View + Payment',
-      href: hasApp ? `${advertisePath}#advertise-payment` : advertisePath,
-      active: isAdvertise && !isAdPerformanceAnchor,
+      label: 'Advertise',
+      href: advertisePath,
+      active: /^\/dashboard\/apps\/[^/]+\/advertise(?:\/|$)/.test(pathname),
     },
     {
       label: 'Ad Performance',
-      href: hasApp ? `${advertisePath}#ad-performance` : advertisePath,
-      active: isAdvertise && isAdPerformanceAnchor,
+      href: adPerformancePath,
+      active: /^\/dashboard\/apps\/[^/]+\/ad-performance(?:\/|$)/.test(pathname),
     },
   ]
 
   const publishItems: NavItem[] = [
     {
-      label: 'Earn Money / Publish + Payout Account',
-      href: hasApp ? `${publishPath}#publish-payout` : publishPath,
-      active: isPublish && !isPublisherPerformanceAnchor,
+      label: 'Publish and Earn',
+      href: publishPath,
+      active: /^\/dashboard\/apps\/[^/]+\/publish(?:\/|$)/.test(pathname),
     },
     {
       label: 'Publisher Performance',
-      href: hasApp ? `${publishPath}#publisher-performance` : publishPath,
-      active: isPublish && isPublisherPerformanceAnchor,
+      href: publisherPerformancePath,
+      active: /^\/dashboard\/apps\/[^/]+\/publisher-performance(?:\/|$)/.test(pathname),
     },
   ]
 
   return (
     <nav className="rounded-xl border bg-card p-3 lg:sticky lg:top-6">
+      <div className="mb-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">App</p>
+        <select
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          onChange={onSelectApp}
+          value={activeAppId ?? ''}
+        >
+          {apps.length === 0 ? (
+            <option value="">No apps yet</option>
+          ) : (
+            apps.map((app) => (
+              <option key={app.app_id} value={app.app_id}>
+                {app.name}
+              </option>
+            ))
+          )}
+          <option value="__new__">+ Add new app</option>
+        </select>
+      </div>
+
       <ul className="space-y-1">
         {topItems.map((item) => (
           <li key={item.label}>
