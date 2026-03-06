@@ -479,6 +479,46 @@ export type Database = {
           unique_ad_view_rows: number
         }[]
       }
+      get_admin_weekly_advertiser_breakdown: {
+        Args: { p_week_start: string }
+        Returns: {
+          actual_share_ratio: number
+          advertiser_app_id: string
+          advertiser_app_name: string
+          network_unique_users: number
+          purchased_percentage: number
+          spend_cents: number
+          user_reach: number
+        }[]
+      }
+      get_admin_weekly_network_summaries: {
+        Args: { p_limit?: number }
+        Returns: {
+          advertiser_app_count: number
+          confirmed_spend_cents: number
+          network_price_cents: number
+          network_unique_users: number
+          purchased_percentage: number
+          publisher_app_count: number
+          publisher_pool_cents: number
+          week_start: string
+        }[]
+      }
+      get_admin_weekly_publisher_breakdown: {
+        Args: { p_week_start: string }
+        Returns: {
+          converted_cents: number
+          due_payout_cents: number
+          hold_until: string | null
+          network_unique_users: number
+          paid_at: string | null
+          payout_status: string | null
+          publisher_app_id: string
+          publisher_app_name: string
+          share_ratio: number
+          unique_users: number
+        }[]
+      }
       get_live_network_stats: {
         Args: { p_days?: number }
         Returns: {

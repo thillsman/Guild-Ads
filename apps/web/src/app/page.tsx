@@ -1,7 +1,9 @@
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { unstable_noStore as noStore } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +12,8 @@ import { NetworkCalculator } from '@/components/home/network-calculator'
 import { getLiveNetworkStats } from '@/lib/network/live-network-stats'
 
 export default async function Home() {
+  noStore()
+
   const supabase = createAdminClient()
   const liveNetworkStats = await getLiveNetworkStats(supabase)
 
@@ -78,7 +82,7 @@ export default async function Home() {
                       Live Network Snapshot
                     </p>
                     <CardTitle className="text-2xl leading-tight sm:text-3xl">
-                      <span className="text-primary">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</span> apps are currently running ads in{' '}
+                      <span className="text-primary">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</span> advertisers are currently running ads in{' '}
                       <span className="text-primary">{liveNetworkStats.publisherAppsCount.toLocaleString()}</span> publisher apps seen by{' '}
                       <span className="text-primary">{liveNetworkStats.trailing7dUsers.toLocaleString()}</span> users over the last{' '}
                       {liveNetworkStats.trailingDays} days.
@@ -89,7 +93,7 @@ export default async function Home() {
                   </CardHeader>
                   <CardContent className="grid gap-4 border-t bg-muted/20 pt-6 md:grid-cols-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Advertiser apps</p>
+                      <p className="text-sm text-muted-foreground">Advertisers</p>
                       <p className="mt-1 text-3xl font-bold">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">Confirmed for this week</p>
                     </div>

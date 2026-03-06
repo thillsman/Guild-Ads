@@ -13,6 +13,7 @@ interface SidebarApp {
 interface DashboardSidebarProps {
   apps: SidebarApp[]
   defaultAppId: string | null
+  adminHref?: string | null
 }
 
 interface NavItem {
@@ -63,7 +64,7 @@ function routeForSection(appId: string, section: AppSection): string {
   }
 }
 
-export function DashboardSidebar({ apps, defaultAppId }: DashboardSidebarProps) {
+export function DashboardSidebar({ apps, defaultAppId, adminHref = null }: DashboardSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -170,6 +171,28 @@ export function DashboardSidebar({ apps, defaultAppId }: DashboardSidebarProps) 
           </li>
         ))}
       </ul>
+
+      {adminHref && (
+        <>
+          <div className="my-3 border-t" />
+
+          <ul className="space-y-1">
+            <li>
+              <Link
+                href={adminHref}
+                className={cn(
+                  'block rounded-lg px-3 py-2 text-sm transition-colors',
+                  pathname === adminHref
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                Admin
+              </Link>
+            </li>
+          </ul>
+        </>
+      )}
 
       <div className="my-3 border-t" />
 

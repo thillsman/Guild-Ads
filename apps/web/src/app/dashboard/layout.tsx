@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { DashboardSidebar } from '@/components/dashboard/sidebar'
+import { isHardcodedAdminUser } from '@/lib/admin/access'
 
 export default async function DashboardLayout({
   children,
@@ -30,6 +31,7 @@ export default async function DashboardLayout({
     app_id: app.app_id,
     name: app.name,
   }))
+  const adminHref = isHardcodedAdminUser(user.id) ? '/dashboard/admin' : null
 
   return (
     <div className="min-h-screen">
@@ -37,7 +39,7 @@ export default async function DashboardLayout({
 
       <div className="container mx-auto px-4 py-6 lg:flex lg:items-start lg:gap-6">
         <aside className="mb-6 w-full lg:mb-0 lg:w-72 lg:shrink-0">
-          <DashboardSidebar apps={sidebarApps} defaultAppId={defaultAppId} />
+          <DashboardSidebar apps={sidebarApps} defaultAppId={defaultAppId} adminHref={adminHref} />
         </aside>
 
         <div className="min-w-0 flex-1">
