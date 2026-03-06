@@ -51,6 +51,7 @@ And extends `slot_purchases` with:
 - Earned/converted credits do not expire.
 - Conversion endpoint debits payable cash allocation and grants credits with 10% bonus.
 - No credit-to-cash reverse conversion.
+- Proposed next-step economics, including normalized fill over sold inventory and cash-only payout-pool math, are documented in `docs/30-pricing/weekly-economics-proposal.md`.
 
 ## Payout Accounting
 1. Weekly accrual computes net publisher allocations from closed weeks.
@@ -96,4 +97,3 @@ And extends `slot_purchases` with:
 ## Notes
 - Stripe fees/taxes are intentionally tracked separately from payout pool logic in v1.
 - RevenueCat is intentionally out of this launch path.
-
