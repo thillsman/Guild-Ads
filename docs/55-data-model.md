@@ -2,6 +2,8 @@
 
 Guild Ads now has three main data domains: app identity, weekly delivery, and billing/payout accounting.
 
+If you want the simpler version, read [56-table-guide.md](./56-table-guide.md).
+
 ## Core app and delivery tables
 
 ### `apps`

@@ -10,7 +10,7 @@ This folder contains product + engineering documentation for building:
 ## How to use these docs
 
 - Start with **`docs/00-overview.md`** to understand the product shape.
-- Reference **`docs/05-glossary.md`** and **`docs/55-data-model.md`** for shared terminology and entities.
+- Reference **`docs/05-glossary.md`**, **`docs/55-data-model.md`**, and **`docs/56-table-guide.md`** for shared terminology and entities.
 - Engineers building the system should follow:
   - **`docs/40-sdk/`** (client) + **`docs/50-api/`** (server)
 - Product + business decisions are captured in:
