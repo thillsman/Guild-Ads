@@ -67,7 +67,7 @@ create or replace function get_user_credit_balance(p_user_id uuid)
 returns integer
 language sql
 stable
-as $$
+as $get_user_credit_balance$
   select coalesce(sum(cle.amount_cents), 0)::integer
   from credit_ledger_entries cle
   where cle.user_id = p_user_id
@@ -80,13 +80,13 @@ as $$
       'manual_adjustment'
     )
     and (cle.expires_at is null or cle.expires_at > timezone('utc', now()));
-$$;
+$get_user_credit_balance$;
 
 create or replace function get_weekly_sold_percentage(p_week_start date)
 returns integer
 language sql
 stable
-as $$
+as $get_weekly_sold_percentage$
   select coalesce(sum(sp.percentage_purchased), 0)::integer
   from slot_purchases sp
   join weekly_slots ws on ws.slot_id = sp.slot_id
@@ -94,7 +94,7 @@ as $$
     and sp.status = 'confirmed'
     and coalesce(sp.is_internal, false) = false
     and sp.refunded_at is null;
-$$;
+$get_weekly_sold_percentage$;
 
 create or replace function apply_weekly_price_adjustment(
   p_base_price_cents integer,
@@ -103,7 +103,7 @@ create or replace function apply_weekly_price_adjustment(
 returns integer
 language sql
 immutable
-as $$
+as $apply_weekly_price_adjustment$
   select greatest(
     case
       when coalesce(p_base_price_cents, 0) <= 0 then 100000
@@ -115,7 +115,7 @@ as $$
     end,
     1
   )::integer;
-$$;
+$apply_weekly_price_adjustment$;
 
 create or replace function confirm_booking_intent_atomic(p_booking_intent_id uuid)
 returns table (
@@ -126,7 +126,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $confirm_booking_intent_atomic$
 declare
   v_intent billing_booking_intents%rowtype;
   v_total_percentage integer;
@@ -253,7 +253,7 @@ begin
 
   return query select true, 'confirmed', v_purchase_id;
 end;
-$$;
+$confirm_booking_intent_atomic$;
 
 create or replace function run_weekly_earnings_accrual(p_week_start date)
 returns table (
@@ -265,7 +265,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $run_weekly_earnings_accrual$
 declare
   v_cash_spend_cents integer := 0;
   v_platform_reserve_cents integer := 0;
@@ -390,7 +390,7 @@ begin
 
   return query select p_week_start, v_pool_cents, v_network_unique_users, v_rows_upserted;
 end;
-$$;
+$run_weekly_earnings_accrual$;
 
 create or replace function grant_publisher_bonus_credits(p_week_start date)
 returns table (
@@ -401,7 +401,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $grant_publisher_bonus_credits$
 declare
   v_rows_credited integer := 0;
   v_total_bonus_cents integer := 0;
@@ -472,7 +472,7 @@ begin
 
   return query select p_week_start, v_rows_credited, v_total_bonus_cents;
 end;
-$$;
+$grant_publisher_bonus_credits$;
 
 with week_cash as (
   select
@@ -531,7 +531,7 @@ returns table (
 )
 language sql
 stable
-as $$
+as $get_admin_weekly_network_summaries$
 with params as (
   select greatest(coalesce(p_limit, 24), 1) as limit_count
 ),
@@ -613,7 +613,7 @@ from relevant_weeks rw
 left join confirmed_purchases cp on cp.week_start = rw.week_start
 left join publisher_reach pr on pr.week_start = rw.week_start
 order by rw.week_start desc;
-$$;
+$get_admin_weekly_network_summaries$;
 
 create or replace function get_admin_weekly_advertiser_breakdown(p_week_start date)
 returns table (
@@ -629,7 +629,7 @@ returns table (
 )
 language sql
 stable
-as $$
+as $get_admin_weekly_advertiser_breakdown$
 with purchase_totals as (
   select
     c.app_id as advertiser_app_id,
@@ -697,7 +697,7 @@ from purchase_totals pt
 cross join network_reach nr
 left join advertiser_reach ar on ar.advertiser_app_id = pt.advertiser_app_id
 order by pt.purchased_percentage desc, pt.booked_spend_cents desc, pt.advertiser_app_name asc;
-$$;
+$get_admin_weekly_advertiser_breakdown$;
 
 create or replace function get_admin_weekly_publisher_breakdown(p_week_start date)
 returns table (
@@ -715,7 +715,7 @@ returns table (
 )
 language sql
 stable
-as $$
+as $get_admin_weekly_publisher_breakdown$
 with pool as (
   select
     coalesce(sum(sp.cash_paid_cents) filter (
@@ -783,9 +783,9 @@ left join publisher_weekly_earnings pwe
   on pwe.week_start = p_week_start
  and pwe.publisher_app_id = c.publisher_app_id
 order by c.unique_users desc, c.publisher_app_name asc;
-$$;
+$get_admin_weekly_publisher_breakdown$;
 
-do $$
+do $weekly_economics_backfill$
 declare
   v_week_start date;
 begin
@@ -801,4 +801,4 @@ begin
     perform run_weekly_earnings_accrual(v_week_start);
   end loop;
 end;
-$$;
+$weekly_economics_backfill$;
