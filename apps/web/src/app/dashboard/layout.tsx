@@ -31,7 +31,12 @@ export default async function DashboardLayout({
     app_id: app.app_id,
     name: app.name,
   }))
-  const adminHref = isHardcodedAdminUser(user.id) ? '/dashboard/admin' : null
+  const adminItems = isHardcodedAdminUser(user.id)
+    ? [
+        { label: 'Admin', href: '/dashboard/admin' },
+        { label: 'All Users', href: '/dashboard/admin/users' },
+      ]
+    : []
 
   return (
     <div className="min-h-screen">
@@ -39,7 +44,7 @@ export default async function DashboardLayout({
 
       <div className="container mx-auto px-4 py-6 lg:flex lg:items-start lg:gap-6">
         <aside className="mb-6 w-full lg:mb-0 lg:w-72 lg:shrink-0">
-          <DashboardSidebar apps={sidebarApps} defaultAppId={defaultAppId} adminHref={adminHref} />
+          <DashboardSidebar apps={sidebarApps} defaultAppId={defaultAppId} adminItems={adminItems} />
         </aside>
 
         <div className="min-w-0 flex-1">

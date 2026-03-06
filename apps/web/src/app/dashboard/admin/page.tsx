@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
+import { AdminNav } from '@/components/admin/admin-nav'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 import { isHardcodedAdminUser } from '@/lib/admin/access'
@@ -80,37 +81,31 @@ function zeroSummary(weekStart: string, networkPriceCents: number): AdminWeeklyN
   }
 }
 
-function SummaryStats({
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-muted/40 p-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+    </div>
+  )
+}
+
+function AdvertiserSummaryStats({
   summary,
-  extraLabel,
+  showCountedUsers = false,
 }: {
   summary: AdminWeeklyNetworkSummary
-  extraLabel?: string
+  showCountedUsers?: boolean
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <div className="rounded-lg bg-muted/40 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Network Price</p>
-        <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.networkPriceCents)}</p>
-      </div>
-      <div className="rounded-lg bg-muted/40 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Confirmed Spend</p>
-        <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.confirmedSpendCents)}</p>
-      </div>
-      <div className="rounded-lg bg-muted/40 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Sold Share</p>
-        <p className="mt-1 text-lg font-semibold">{formatWholePercent(summary.purchasedPercentage)}</p>
-      </div>
-      <div className="rounded-lg bg-muted/40 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Publishers</p>
-        <p className="mt-1 text-lg font-semibold">{summary.publisherAppCount.toLocaleString()}</p>
-      </div>
-      <div className="rounded-lg bg-muted/40 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{extraLabel ?? 'Publisher Pool'}</p>
-        <p className="mt-1 text-lg font-semibold">
-          {extraLabel ? summary.networkUniqueUsers.toLocaleString() : formatCurrency(summary.publisherPoolCents)}
-        </p>
-      </div>
+    <div className={`grid gap-3 sm:grid-cols-2 ${showCountedUsers ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
+      <StatCard label="Network Price" value={formatCurrency(summary.networkPriceCents)} />
+      <StatCard label="Confirmed Spend" value={formatCurrency(summary.confirmedSpendCents)} />
+      <StatCard label="Sold Share" value={formatWholePercent(summary.purchasedPercentage)} />
+      <StatCard label="Publishers" value={summary.publisherAppCount.toLocaleString()} />
+      {showCountedUsers && (
+        <StatCard label="Counted Users" value={summary.networkUniqueUsers.toLocaleString()} />
+      )}
     </div>
   )
 }
@@ -284,18 +279,21 @@ export default async function AdminPage() {
 
   return (
     <main className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Admin</h1>
-        <p className="mt-1 text-muted-foreground">
-          Network-level booking, delivery, and publisher payout reporting.
-        </p>
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-3xl font-bold">Admin</h1>
+          <p className="mt-1 text-muted-foreground">
+            Network-level booking, delivery, and publisher payout reporting.
+          </p>
+        </div>
+        <AdminNav />
       </div>
 
       <Card className="border-primary/20">
         <CardHeader>
           <CardTitle>Live Snapshot</CardTitle>
           <CardDescription>
-            These cards intentionally mirror the public network snapshot. Advertiser apps come from current-week confirmed bookings. Publisher apps and users here come from trailing 7-day serve attempts, which is why this can differ from the weekly payout tables below.
+            These cards intentionally mirror the public network snapshot. Advertiser apps come from current-week confirmed bookings. Publisher apps and users come from the trailing 7-day snapshot logic, with sticky-assignment backfill when serve-attempt logging is missing.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
@@ -322,7 +320,7 @@ export default async function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SummaryStats summary={currentWeekSummary} />
+          <AdvertiserSummaryStats summary={currentWeekSummary} />
           <AdvertiserTable advertisers={currentWeekAdvertisers} showDelivery />
         </CardContent>
       </Card>
@@ -335,10 +333,12 @@ export default async function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SummaryStats summary={nextWeekSummary} extraLabel="Counted Users" />
+          <AdvertiserSummaryStats summary={nextWeekSummary} showCountedUsers />
           <AdvertiserTable advertisers={nextWeekAdvertisers} showDelivery={false} />
         </CardContent>
       </Card>
+
+      <div className="border-t" />
 
       <Card>
         <CardHeader>
@@ -348,25 +348,12 @@ export default async function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-lg bg-muted/40 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Publisher Pool</p>
-              <p className="mt-1 text-lg font-semibold">{formatCurrency(currentWeekSummary.publisherPoolCents)}</p>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Counted Users</p>
-              <p className="mt-1 text-lg font-semibold">{currentWeekSummary.networkUniqueUsers.toLocaleString()}</p>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Publishers</p>
-              <p className="mt-1 text-lg font-semibold">{currentWeekSummary.publisherAppCount.toLocaleString()}</p>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Confirmed Spend</p>
-              <p className="mt-1 text-lg font-semibold">{formatCurrency(currentWeekSummary.confirmedSpendCents)}</p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <StatCard label="Publisher Pool" value={formatCurrency(currentWeekSummary.publisherPoolCents)} />
+            <StatCard label="Counted Users" value={currentWeekSummary.networkUniqueUsers.toLocaleString()} />
+            <StatCard label="Publishers" value={currentWeekSummary.publisherAppCount.toLocaleString()} />
           </div>
-          <PublisherTable publishers={currentWeekPublishers} showStatus={false} />
+          <PublisherTable publishers={currentWeekPublishers} showStatus />
         </CardContent>
       </Card>
 

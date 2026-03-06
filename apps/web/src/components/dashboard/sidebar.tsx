@@ -13,7 +13,10 @@ interface SidebarApp {
 interface DashboardSidebarProps {
   apps: SidebarApp[]
   defaultAppId: string | null
-  adminHref?: string | null
+  adminItems?: {
+    label: string
+    href: string
+  }[]
 }
 
 interface NavItem {
@@ -64,7 +67,15 @@ function routeForSection(appId: string, section: AppSection): string {
   }
 }
 
-export function DashboardSidebar({ apps, defaultAppId, adminHref = null }: DashboardSidebarProps) {
+function isAdminItemActive(pathname: string, href: string): boolean {
+  if (href === '/dashboard/admin') {
+    return pathname === href
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+export function DashboardSidebar({ apps, defaultAppId, adminItems = [] }: DashboardSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -172,24 +183,26 @@ export function DashboardSidebar({ apps, defaultAppId, adminHref = null }: Dashb
         ))}
       </ul>
 
-      {adminHref && (
+      {adminItems.length > 0 && (
         <>
           <div className="my-3 border-t" />
 
           <ul className="space-y-1">
-            <li>
-              <Link
-                href={adminHref}
-                className={cn(
-                  'block rounded-lg px-3 py-2 text-sm transition-colors',
-                  pathname === adminHref
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-              >
-                Admin
-              </Link>
-            </li>
+            {adminItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'block rounded-lg px-3 py-2 text-sm transition-colors',
+                    isAdminItemActive(pathname, item.href)
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </>
       )}
