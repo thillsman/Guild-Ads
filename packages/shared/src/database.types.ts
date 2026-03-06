@@ -213,6 +213,76 @@ export type Database = {
           },
         ]
       }
+      serve_attempts: {
+        Row: {
+          app_id: string
+          attempt_id: string
+          campaign_id: string | null
+          created_at: string
+          decision_reason: string
+          device_id_hash: string | null
+          endpoint: string
+          locale: string | null
+          os_version: string | null
+          placement_id: string
+          response_type: string
+          sdk_version: string | null
+          slot_purchase_id: string | null
+        }
+        Insert: {
+          app_id: string
+          attempt_id?: string
+          campaign_id?: string | null
+          created_at?: string
+          decision_reason: string
+          device_id_hash?: string | null
+          endpoint: string
+          locale?: string | null
+          os_version?: string | null
+          placement_id?: string
+          response_type: string
+          sdk_version?: string | null
+          slot_purchase_id?: string | null
+        }
+        Update: {
+          app_id?: string
+          attempt_id?: string
+          campaign_id?: string | null
+          created_at?: string
+          decision_reason?: string
+          device_id_hash?: string | null
+          endpoint?: string
+          locale?: string | null
+          os_version?: string | null
+          placement_id?: string
+          response_type?: string
+          sdk_version?: string | null
+          slot_purchase_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serve_attempts_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "serve_attempts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "serve_attempts_slot_purchase_id_fkey"
+            columns: ["slot_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "slot_purchases"
+            referencedColumns: ["purchase_id"]
+          },
+        ]
+      }
       slot_purchases: {
         Row: {
           campaign_id: string | null
@@ -383,7 +453,13 @@ export type Database = {
           ad_request_rows: number
           clicks: number
           day: string
+          error_serves: number
+          filled_serves: number
           impressions: number
+          no_fill_serves: number
+          request_users: number
+          serve_attempt_rows: number
+          unique_click_users: number
           unique_users: number
         }[]
       }
@@ -393,8 +469,13 @@ export type Database = {
           ad_request_rows: number
           ad_request_rows_30d: number
           ad_request_rows_7d: number
-          first_ad_request_at: string
-          last_ad_request_at: string
+          first_ad_request_at: string | null
+          first_serve_attempt_at: string | null
+          last_ad_request_at: string | null
+          last_serve_attempt_at: string | null
+          serve_attempt_rows: number
+          serve_attempt_rows_30d: number
+          serve_attempt_rows_7d: number
           unique_ad_view_rows: number
         }[]
       }
@@ -403,8 +484,30 @@ export type Database = {
         Args: { p_app_id: string; p_user_id: string; p_weeks?: number }
         Returns: {
           clicks: number
+          error_requests: number
+          filled_requests: number
           impressions: number
+          no_fill_requests: number
           placement_id: string
+          request_users: number
+          unique_click_users: number
+          unique_filled_users: number
+          unique_users: number
+          week_start: string
+        }[]
+      }
+      get_publisher_portfolio_weekly_totals: {
+        Args: { p_user_id: string; p_weeks?: number }
+        Returns: {
+          app_count: number
+          clicks: number
+          error_requests: number
+          filled_requests: number
+          impressions: number
+          no_fill_requests: number
+          request_users: number
+          unique_click_users: number
+          unique_filled_users: number
           unique_users: number
           week_start: string
         }[]
@@ -413,7 +516,13 @@ export type Database = {
         Args: { p_app_id: string; p_user_id: string; p_weeks?: number }
         Returns: {
           clicks: number
+          error_requests: number
+          filled_requests: number
           impressions: number
+          no_fill_requests: number
+          request_users: number
+          unique_click_users: number
+          unique_filled_users: number
           unique_users: number
           week_start: string
         }[]

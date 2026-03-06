@@ -46,6 +46,26 @@ interface EligibleCandidatesResult {
   eligiblePurchasedPercentage: number
 }
 
+export type WeightedAdFillReason =
+  | 'current_week_fill'
+  | 'fallback_confirmed_fill'
+  | 'fallback_any_status_fill'
+
+export type WeightedAdNoFillReason =
+  | 'weighted_no_fill'
+  | 'no_inventory'
+
+export type WeightedAdDecision =
+  | {
+    kind: 'ad'
+    ad: ServedAd
+    reason: WeightedAdFillReason
+  }
+  | {
+    kind: 'no_fill'
+    reason: WeightedAdNoFillReason
+  }
+
 const PRIMARY_PURCHASE_STATUSES = ['confirmed']
 const FORCE_FILL_FALLBACK_STATUSES = ['pending', 'confirmed', 'completed']
 
@@ -346,13 +366,13 @@ export async function fetchAdByCampaignID(
   return fetchAdByPurchaseID(supabase, fallbackPurchaseID, publisherAppId)
 }
 
-export async function fetchWeightedAdForPublisher(
+export async function getWeightedAdDecisionForPublisher(
   supabase: SupabaseClient<Database>,
   input: {
     publisherAppId: string
     neverNoFill?: boolean
   }
-): Promise<ServedAd | null> {
+): Promise<WeightedAdDecision> {
   const neverNoFill = input.neverNoFill === true
   const weekStart = resolveServeWeekStart()
 
@@ -373,11 +393,18 @@ export async function fetchWeightedAdForPublisher(
   }
 
   if (weekChoice) {
-    return buildServedAdFromCandidate(supabase, weekChoice)
+    return {
+      kind: 'ad',
+      ad: await buildServedAdFromCandidate(supabase, weekChoice),
+      reason: 'current_week_fill',
+    }
   }
 
   if (!neverNoFill) {
-    return null
+    return {
+      kind: 'no_fill',
+      reason: weekCandidates.candidates.length > 0 ? 'weighted_no_fill' : 'no_inventory',
+    }
   }
 
   // No-fill exempt publishers fall back to any confirmed week before returning empty.
@@ -386,20 +413,42 @@ export async function fetchWeightedAdForPublisher(
     statuses: PRIMARY_PURCHASE_STATUSES,
   })
   const fallbackChoice = chooseWeightedCandidate(fallbackCandidates.candidates)
-  if (!fallbackChoice) {
-    const broaderFallbackCandidates = await fetchEligiblePurchaseCandidates(supabase, {
-      publisherAppId: input.publisherAppId,
-      statuses: FORCE_FILL_FALLBACK_STATUSES,
-    })
-    const broaderFallbackChoice = chooseWeightedCandidate(broaderFallbackCandidates.candidates)
-    if (!broaderFallbackChoice) {
-      return null
+  if (fallbackChoice) {
+    return {
+      kind: 'ad',
+      ad: await buildServedAdFromCandidate(supabase, fallbackChoice),
+      reason: 'fallback_confirmed_fill',
     }
-
-    return buildServedAdFromCandidate(supabase, broaderFallbackChoice)
   }
 
-  return buildServedAdFromCandidate(supabase, fallbackChoice)
+  const broaderFallbackCandidates = await fetchEligiblePurchaseCandidates(supabase, {
+    publisherAppId: input.publisherAppId,
+    statuses: FORCE_FILL_FALLBACK_STATUSES,
+  })
+  const broaderFallbackChoice = chooseWeightedCandidate(broaderFallbackCandidates.candidates)
+  if (!broaderFallbackChoice) {
+    return {
+      kind: 'no_fill',
+      reason: 'no_inventory',
+    }
+  }
+
+  return {
+    kind: 'ad',
+    ad: await buildServedAdFromCandidate(supabase, broaderFallbackChoice),
+    reason: 'fallback_any_status_fill',
+  }
+}
+
+export async function fetchWeightedAdForPublisher(
+  supabase: SupabaseClient<Database>,
+  input: {
+    publisherAppId: string
+    neverNoFill?: boolean
+  }
+): Promise<ServedAd | null> {
+  const decision = await getWeightedAdDecisionForPublisher(supabase, input)
+  return decision.kind === 'ad' ? decision.ad : null
 }
 
 export function buildServeResponse(input: BuildAdResponseInput) {

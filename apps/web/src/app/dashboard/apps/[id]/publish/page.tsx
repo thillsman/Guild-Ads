@@ -21,6 +21,20 @@ interface PublisherWeeklyEarningsRow {
   paid_at: string | null
 }
 
+interface RecentServeAttemptRow {
+  attempt_id: string
+  response_type: string
+  decision_reason: string
+  sdk_version: string | null
+  placement_id: string
+  created_at: string
+}
+
+interface RecentAdRequestRow {
+  request_id: string
+  clicked: boolean
+}
+
 function toCount(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
@@ -40,6 +54,39 @@ function formatWeekRange(weekStart: string): string {
   end.setUTCDate(end.getUTCDate() + 6)
 
   return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
+}
+
+function formatDecisionReason(reason: string): string {
+  switch (reason) {
+    case 'sticky_existing':
+      return 'Sticky assignment reused'
+    case 'sticky_assigned':
+      return 'New sticky assignment'
+    case 'sticky_reassigned':
+      return 'Sticky assignment refreshed'
+    case 'current_week_fill':
+      return 'Filled from current week inventory'
+    case 'fallback_confirmed_fill':
+      return 'Filled from confirmed fallback inventory'
+    case 'fallback_any_status_fill':
+      return 'Filled from broad fallback inventory'
+    case 'weighted_no_fill':
+      return 'Expected no-fill from inventory share'
+    case 'no_inventory':
+      return 'No eligible inventory'
+    case 'sticky_reassignment_weighted_no_fill':
+      return 'Sticky reassignment hit no-fill'
+    case 'sticky_reassignment_no_inventory':
+      return 'Sticky reassignment found no inventory'
+    case 'missing_user_id':
+      return 'Missing user identifier'
+    case 'serve_handler_error':
+      return 'Serve handler error'
+    case 'launch_handler_error':
+      return 'Launch handler error'
+    default:
+      return reason.replaceAll('_', ' ')
+  }
 }
 
 export default async function AppPublishPage({ params }: Props) {
@@ -67,9 +114,16 @@ export default async function AppPublishPage({ params }: Props) {
     .is('revoked_at', null)
     .order('created_at', { ascending: false })
 
-  const { data: recentRequests } = await supabase
+  const { data: recentServeAttempts } = await (supabase as any)
+    .from('serve_attempts')
+    .select('attempt_id, response_type, decision_reason, sdk_version, placement_id, created_at')
+    .eq('app_id', id)
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  const { data: recentAdRequests } = await supabase
     .from('ad_requests')
-    .select('request_id, response_type, sdk_version, os_version, locale, placement_id, clicked, created_at')
+    .select('request_id, clicked')
     .eq('app_id', id)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -141,10 +195,12 @@ export default async function AppPublishPage({ params }: Props) {
     paid: 0,
   })
 
-  const totalRequests = recentRequests?.length ?? 0
-  const filledRequests = recentRequests?.filter((request) => request.response_type === 'ad').length ?? 0
+  const totalRequests = ((recentServeAttempts ?? []) as RecentServeAttemptRow[]).length
+  const filledRequests = ((recentServeAttempts ?? []) as RecentServeAttemptRow[])
+    .filter((request) => request.response_type === 'ad').length
   const fillRate = totalRequests > 0 ? Math.round((filledRequests / totalRequests) * 100) : 0
-  const clickedRequests = recentRequests?.filter((request) => request.clicked).length ?? 0
+  const clickedRequests = ((recentAdRequests ?? []) as RecentAdRequestRow[])
+    .filter((request) => request.clicked).length
 
   return (
     <main className="max-w-5xl">
@@ -197,7 +253,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
             SDK Activity
           </CardTitle>
           <CardDescription>
-            Recent ad requests from your app (last 50 requests)
+            Recent serve attempts from your app (last 50 attempts)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -214,27 +270,38 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
                 </div>
                 <div className="rounded-lg bg-muted p-4 text-center">
                   <p className="text-2xl font-bold">{clickedRequests}</p>
-                  <p className="text-sm text-muted-foreground">Clicks</p>
+                  <p className="text-sm text-muted-foreground">Tracked Clicks</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <p className="mb-3 text-sm font-medium">Recent Requests</p>
+                <p className="mb-3 text-sm font-medium">Recent Attempts</p>
                 <div className="max-h-64 space-y-2 overflow-y-auto">
-                  {recentRequests?.slice(0, 10).map((request) => (
+                  {((recentServeAttempts ?? []) as RecentServeAttemptRow[]).slice(0, 10).map((request) => (
                     <div
-                      key={request.request_id}
-                      className="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-sm"
+                      key={request.attempt_id}
+                      className="flex items-start justify-between rounded-lg bg-muted/50 p-3 text-sm"
                     >
                       <div className="flex items-center gap-3">
                         {request.response_type === 'ad' ? (
                           <CheckCircle className="h-4 w-4 text-green-500" weight="fill" />
+                        ) : request.response_type === 'error' ? (
+                          <XCircle className="h-4 w-4 text-red-500" weight="fill" />
                         ) : (
                           <XCircle className="h-4 w-4 text-muted-foreground" weight="fill" />
                         )}
-                        <span className={request.response_type === 'ad' ? 'text-foreground' : 'text-muted-foreground'}>
-                          {request.response_type === 'ad' ? 'Ad served' : 'No fill'}
-                        </span>
+                        <div>
+                          <p className={request.response_type === 'ad' ? 'text-foreground' : 'text-muted-foreground'}>
+                            {request.response_type === 'ad'
+                              ? 'Ad served'
+                              : request.response_type === 'error'
+                                ? 'Serve error'
+                                : 'No fill'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDecisionReason(request.decision_reason)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-4 text-muted-foreground">
                         {request.sdk_version && (

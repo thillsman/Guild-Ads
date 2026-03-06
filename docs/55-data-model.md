@@ -77,22 +77,38 @@ Advertiser bookings against weekly slots.
 | `status` | text | pending, confirmed, canceled, completed |
 | `created_at` | timestamptz | |
 
+### serve_attempts
+Tracks every serve or launch placement decision, including fill, no-fill, and error outcomes.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `attempt_id` | uuid | Primary key |
+| `app_id` | uuid | Publisher app |
+| `campaign_id` | uuid | Campaign selected, if any |
+| `slot_purchase_id` | uuid | Purchase selected, if any |
+| `device_id_hash` | text | Hashed device ID for weekly reach counts |
+| `placement_id` | text | Placement requested |
+| `endpoint` | text | `serve` or `launch` |
+| `response_type` | text | `ad`, `no_fill`, `error` |
+| `decision_reason` | text | Why the decision happened |
+| `created_at` | timestamptz | Attempt time |
+
 ### ad_requests
-Tracks SDK requests for metrics and serving.
+Tracks impression logs after an ad is actually shown.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `request_id` | uuid | Primary key |
 | `app_id` | uuid | Publisher app |
-| `campaign_id` | uuid | Campaign served (null if no fill) |
-| `device_id_hash` | text | Hashed device ID for unique user counts |
+| `campaign_id` | uuid | Campaign shown |
+| `device_id_hash` | text | Hashed device ID for impression and click user counts |
 | `sdk_version` | text | SDK version |
 | `os_version` | text | iOS version |
 | `locale` | text | Device locale |
-| `response_type` | text | ad, no_fill, error |
+| `response_type` | text | Currently `ad` for displayed impressions |
 | `clicked` | boolean | Was the ad clicked? |
 | `clicked_at` | timestamptz | When clicked |
-| `created_at` | timestamptz | Request time |
+| `created_at` | timestamptz | Impression time |
 
 ## Relationships
 
@@ -103,7 +119,8 @@ User (auth.users)
         ├── campaigns (many) - for advertising
         │     └── slot_purchases (many)
         │           └── weekly_slots
-        └── ad_requests (many) - incoming SDK requests
+        ├── serve_attempts (many) - raw serve / no-fill decisions
+        └── ad_requests (many) - impression logs after display
 ```
 
 ## Key Constraints

@@ -10,57 +10,98 @@ interface Props {
 
 interface PublisherWeeklyTotalsRow {
   week_start: string
+  request_users: number | string
+  filled_requests: number | string
+  no_fill_requests: number | string
+  error_requests: number | string
+  unique_filled_users: number | string
   impressions: number | string
   unique_users: number | string
   clicks: number | string
+  unique_click_users: number | string
 }
 
 interface PublisherPlacementMetricsRow {
   week_start: string
   placement_id: string
+  request_users: number | string
+  filled_requests: number | string
+  no_fill_requests: number | string
+  error_requests: number | string
+  unique_filled_users: number | string
   impressions: number | string
   unique_users: number | string
   clicks: number | string
+  unique_click_users: number | string
 }
 
 interface AppDataVolumeRow {
+  serve_attempt_rows: number | string
   ad_request_rows: number | string
   unique_ad_view_rows: number | string
+  serve_attempt_rows_7d: number | string
+  serve_attempt_rows_30d: number | string
   ad_request_rows_7d: number | string
   ad_request_rows_30d: number | string
+  first_serve_attempt_at: string | null
+  last_serve_attempt_at: string | null
   first_ad_request_at: string | null
   last_ad_request_at: string | null
 }
 
 interface DailyStorageMetricRow {
   day: string
+  serve_attempt_rows: number | string
+  request_users: number | string
+  filled_serves: number | string
+  no_fill_serves: number | string
+  error_serves: number | string
   ad_request_rows: number | string
   impressions: number | string
   unique_users: number | string
   clicks: number | string
+  unique_click_users: number | string
 }
 
 interface WeeklyTotals {
   weekStart: string
+  requestUsers: number
+  filledRequests: number
+  noFillRequests: number
+  errorRequests: number
+  uniqueFilledUsers: number
   impressions: number
-  uniqueUsers: number
+  viewedUsers: number
   clicks: number
+  uniqueClickUsers: number
 }
 
 interface PlacementMetric {
   weekStart: string
   placementID: string
+  requestUsers: number
+  filledRequests: number
+  noFillRequests: number
+  errorRequests: number
+  uniqueFilledUsers: number
   impressions: number
-  uniqueUsers: number
+  viewedUsers: number
   clicks: number
+  uniqueClickUsers: number
 }
 
 interface DailyStorageMetric {
   day: string
+  serveAttemptRows: number
+  requestUsers: number
+  filledServes: number
+  noFillServes: number
+  errorServes: number
   adRequestRows: number
   impressions: number
-  uniqueUsers: number
+  viewedUsers: number
   clicks: number
+  uniqueClickUsers: number
 }
 
 const REPORTING_WEEKS = 12
@@ -148,9 +189,15 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
     .filter((row): row is PublisherWeeklyTotalsRow => typeof row.week_start === 'string')
     .map((row): WeeklyTotals => ({
       weekStart: row.week_start,
+      requestUsers: toCount(row.request_users),
+      filledRequests: toCount(row.filled_requests),
+      noFillRequests: toCount(row.no_fill_requests),
+      errorRequests: toCount(row.error_requests),
+      uniqueFilledUsers: toCount(row.unique_filled_users),
       impressions: toCount(row.impressions),
-      uniqueUsers: toCount(row.unique_users),
+      viewedUsers: toCount(row.unique_users),
       clicks: toCount(row.clicks),
+      uniqueClickUsers: toCount(row.unique_click_users),
     }))
     .sort((left, right) => right.weekStart.localeCompare(left.weekStart))
 
@@ -162,9 +209,15 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
     .map((row): PlacementMetric => ({
       weekStart: row.week_start,
       placementID: row.placement_id.trim() || 'default',
+      requestUsers: toCount(row.request_users),
+      filledRequests: toCount(row.filled_requests),
+      noFillRequests: toCount(row.no_fill_requests),
+      errorRequests: toCount(row.error_requests),
+      uniqueFilledUsers: toCount(row.unique_filled_users),
       impressions: toCount(row.impressions),
-      uniqueUsers: toCount(row.unique_users),
+      viewedUsers: toCount(row.unique_users),
       clicks: toCount(row.clicks),
+      uniqueClickUsers: toCount(row.unique_click_users),
     }))
     .sort((left, right) => {
       const weekComparison = right.weekStart.localeCompare(left.weekStart)
@@ -182,10 +235,15 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
     }
 
     return {
+      serveAttemptRows: toCount(row.serve_attempt_rows),
       adRequestRows: toCount(row.ad_request_rows),
       uniqueAdViewRows: toCount(row.unique_ad_view_rows),
+      serveAttemptRows7d: toCount(row.serve_attempt_rows_7d),
+      serveAttemptRows30d: toCount(row.serve_attempt_rows_30d),
       adRequestRows7d: toCount(row.ad_request_rows_7d),
       adRequestRows30d: toCount(row.ad_request_rows_30d),
+      firstServeAttemptAt: row.first_serve_attempt_at,
+      lastServeAttemptAt: row.last_serve_attempt_at,
       firstAdRequestAt: row.first_ad_request_at,
       lastAdRequestAt: row.last_ad_request_at,
     }
@@ -195,10 +253,16 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
     .filter((row): row is DailyStorageMetricRow => typeof row.day === 'string')
     .map((row): DailyStorageMetric => ({
       day: row.day,
+      serveAttemptRows: toCount(row.serve_attempt_rows),
+      requestUsers: toCount(row.request_users),
+      filledServes: toCount(row.filled_serves),
+      noFillServes: toCount(row.no_fill_serves),
+      errorServes: toCount(row.error_serves),
       adRequestRows: toCount(row.ad_request_rows),
       impressions: toCount(row.impressions),
-      uniqueUsers: toCount(row.unique_users),
+      viewedUsers: toCount(row.unique_users),
       clicks: toCount(row.clicks),
+      uniqueClickUsers: toCount(row.unique_click_users),
     }))
     .sort((left, right) => right.day.localeCompare(left.day))
 
@@ -225,21 +289,25 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
         <CardHeader>
           <CardTitle>Weekly Performance</CardTitle>
           <CardDescription>
-            Impressions, unique users, and clicks by week for the last {REPORTING_WEEKS} weeks
+            Weekly delivery funnel for the last {REPORTING_WEEKS} weeks
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-xs text-muted-foreground">
-            Publisher payment is calculated from weekly unique-user share. Impressions and clicks are shown for delivery and engagement context.
+            Reach users come from all serve attempts. Viewed users and clicks come from impression logs after the ad is actually shown.
           </p>
           {weeklyTotals.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-sm">
+              <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Week</th>
+                    <th className="py-2 pr-3 font-medium">Reach Users</th>
+                    <th className="py-2 pr-3 font-medium">Filled Serves</th>
+                    <th className="py-2 pr-3 font-medium">No Fill</th>
                     <th className="py-2 pr-3 font-medium">Impressions</th>
-                    <th className="py-2 pr-3 font-medium">Users</th>
+                    <th className="py-2 pr-3 font-medium">Viewed Users</th>
+                    <th className="py-2 pr-3 font-medium">Clicked Users</th>
                     <th className="py-2 font-medium">Clicks</th>
                   </tr>
                 </thead>
@@ -247,8 +315,12 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                   {weeklyTotals.map((metric) => (
                     <tr key={metric.weekStart} className="border-b last:border-0">
                       <td className="py-2 pr-3 font-medium">{formatWeekRange(metric.weekStart)}</td>
+                      <td className="py-2 pr-3">{metric.requestUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.filledRequests.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.noFillRequests.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.impressions.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.uniqueUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.viewedUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.uniqueClickUsers.toLocaleString()}</td>
                       <td className="py-2">{metric.clicks.toLocaleString()}</td>
                     </tr>
                   ))}
@@ -256,7 +328,7 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
               </table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No weekly ad metrics yet.</p>
+            <p className="text-sm text-muted-foreground">No weekly delivery metrics yet.</p>
           )}
         </CardContent>
       </Card>
@@ -273,7 +345,11 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-lg bg-muted/40 p-3">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Logged Requests</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Serve Attempts</p>
+                  <p className="mt-1 text-lg font-semibold">{dataVolume.serveAttemptRows.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Impression Logs</p>
                   <p className="mt-1 text-lg font-semibold">{dataVolume.adRequestRows.toLocaleString()}</p>
                 </div>
                 <div className="rounded-lg bg-muted/40 p-3">
@@ -281,12 +357,8 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                   <p className="mt-1 text-lg font-semibold">{dataVolume.uniqueAdViewRows.toLocaleString()}</p>
                 </div>
                 <div className="rounded-lg bg-muted/40 p-3">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Requests (Last 7d)</p>
-                  <p className="mt-1 text-lg font-semibold">{dataVolume.adRequestRows7d.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg bg-muted/40 p-3">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Requests (Last 30d)</p>
-                  <p className="mt-1 text-lg font-semibold">{dataVolume.adRequestRows30d.toLocaleString()}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Serve Attempts (Last 30d)</p>
+                  <p className="mt-1 text-lg font-semibold">{dataVolume.serveAttemptRows30d.toLocaleString()}</p>
                 </div>
               </div>
 
@@ -295,13 +367,19 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                   Tracked User-Weeks = one user, one placement, one week (used for stable ad assignment).
                 </p>
                 <p>
-                  First ad request:{' '}
-                  {dataVolume.firstAdRequestAt
-                    ? new Date(dataVolume.firstAdRequestAt).toLocaleString()
+                  First serve attempt:{' '}
+                  {dataVolume.firstServeAttemptAt
+                    ? new Date(dataVolume.firstServeAttemptAt).toLocaleString()
                     : 'n/a'}
                 </p>
                 <p>
-                  Most recent ad request:{' '}
+                  Most recent serve attempt:{' '}
+                  {dataVolume.lastServeAttemptAt
+                    ? new Date(dataVolume.lastServeAttemptAt).toLocaleString()
+                    : 'n/a'}
+                </p>
+                <p>
+                  Most recent impression log:{' '}
                   {dataVolume.lastAdRequestAt
                     ? new Date(dataVolume.lastAdRequestAt).toLocaleString()
                     : 'n/a'}
@@ -318,19 +396,22 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
         <CardHeader>
           <CardTitle>Daily Growth</CardTitle>
           <CardDescription>
-            Daily request and performance growth for the last {STORAGE_DAILY_WINDOW_DAYS} days
+            Daily request and delivery growth for the last {STORAGE_DAILY_WINDOW_DAYS} days
           </CardDescription>
         </CardHeader>
         <CardContent>
           {dailyStorageMetrics.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[660px] text-sm">
+              <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Day</th>
-                    <th className="py-2 pr-3 font-medium">Logged Requests</th>
+                    <th className="py-2 pr-3 font-medium">Serve Attempts</th>
+                    <th className="py-2 pr-3 font-medium">Reach Users</th>
+                    <th className="py-2 pr-3 font-medium">Filled</th>
+                    <th className="py-2 pr-3 font-medium">No Fill</th>
                     <th className="py-2 pr-3 font-medium">Impressions</th>
-                    <th className="py-2 pr-3 font-medium">Users</th>
+                    <th className="py-2 pr-3 font-medium">Viewed Users</th>
                     <th className="py-2 font-medium">Clicks</th>
                   </tr>
                 </thead>
@@ -344,9 +425,12 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                           timeZone: 'UTC',
                         })}
                       </td>
-                      <td className="py-2 pr-3">{metric.adRequestRows.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.serveAttemptRows.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.requestUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.filledServes.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.noFillServes.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.impressions.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.uniqueUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.viewedUsers.toLocaleString()}</td>
                       <td className="py-2">{metric.clicks.toLocaleString()}</td>
                     </tr>
                   ))}
@@ -363,19 +447,23 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
         <CardHeader>
           <CardTitle>Placement Breakdown</CardTitle>
           <CardDescription>
-            Weekly metrics split by placement
+            Weekly delivery metrics split by placement
           </CardDescription>
         </CardHeader>
         <CardContent>
           {placementMetrics.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
+              <table className="w-full min-w-[920px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Week</th>
                     <th className="py-2 pr-3 font-medium">Placement</th>
+                    <th className="py-2 pr-3 font-medium">Reach Users</th>
+                    <th className="py-2 pr-3 font-medium">Filled</th>
+                    <th className="py-2 pr-3 font-medium">No Fill</th>
                     <th className="py-2 pr-3 font-medium">Impressions</th>
-                    <th className="py-2 pr-3 font-medium">Users</th>
+                    <th className="py-2 pr-3 font-medium">Viewed Users</th>
+                    <th className="py-2 pr-3 font-medium">Clicked Users</th>
                     <th className="py-2 font-medium">Clicks</th>
                   </tr>
                 </thead>
@@ -384,8 +472,12 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                     <tr key={`${metric.weekStart}:${metric.placementID}`} className="border-b last:border-0">
                       <td className="py-2 pr-3 font-medium">{formatWeekRange(metric.weekStart)}</td>
                       <td className="py-2 pr-3 font-mono text-xs">{metric.placementID}</td>
+                      <td className="py-2 pr-3">{metric.requestUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.filledRequests.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.noFillRequests.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.impressions.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.uniqueUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.viewedUsers.toLocaleString()}</td>
+                      <td className="py-2 pr-3">{metric.uniqueClickUsers.toLocaleString()}</td>
                       <td className="py-2">{metric.clicks.toLocaleString()}</td>
                     </tr>
                   ))}

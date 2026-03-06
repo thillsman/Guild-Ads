@@ -110,6 +110,15 @@ export function stringField(body: JsonObject, key: string): string | null {
   return trimmed.length > 0 ? trimmed : null
 }
 
+export function objectField(body: JsonObject, key: string): JsonObject | null {
+  const value = body[key]
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  return value as JsonObject
+}
+
 export function extractToken(request: Request, body: JsonObject): string | null {
   const bodyToken = stringField(body, 'app_token')
   if (bodyToken) {

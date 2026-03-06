@@ -8,9 +8,11 @@
 - Campaign status and upcoming slots
 
 ## Publisher dashboard
+- Weekly reach users from raw serve attempts
 - Revenue (cash + credits, if enabled)
 - Fill rate
 - Impressions, clicks, CTR (aggregate)
+- Unique viewed users and unique click users
 - Placement-level performance
 - Controls: enable/disable placements, caps, category/tags
 
