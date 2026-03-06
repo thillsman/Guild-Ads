@@ -8,11 +8,26 @@ import { Button } from '@/components/ui/button'
 import { Plus, Megaphone, Broadcast, Key } from '@phosphor-icons/react/dist/ssr'
 import { NetworkPricingBanner } from '@/components/booking/network-pricing-banner'
 
-export default async function DashboardPage() {
+type Role = 'advertiser' | 'publisher'
+
+function parseRole(value: string | undefined): Role | null {
+  if (value === 'advertiser' || value === 'publisher') {
+    return value
+  }
+
+  return null
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: { role?: string }
+}) {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const supabase = createAdminClient()
+  const role = parseRole(searchParams?.role)
 
   // Fetch user's apps (using admin client since user is already verified via getAuthUser)
   const { data: apps } = await supabase
@@ -34,6 +49,42 @@ export default async function DashboardPage() {
     .maybeSingle()
 
   const canManageInternal = internalPolicy?.active === true && internalPolicy?.can_manage_internal === true
+  const addAppHref = role ? `/dashboard/apps/new?role=${role}` : '/dashboard/apps/new'
+  const addAppLabel = role === 'advertiser'
+    ? 'Add Advertiser App'
+    : role === 'publisher'
+      ? 'Add Publisher App'
+      : 'Add App'
+  const pageTitle = role === 'advertiser'
+    ? 'Advertiser Apps'
+    : role === 'publisher'
+      ? 'Publisher Apps'
+      : 'My Apps'
+  const pageDescription = role === 'advertiser'
+    ? 'Add your iOS apps, create ad campaigns, and book next week\'s reach.'
+    : role === 'publisher'
+      ? 'Add your iOS apps, generate SDK tokens, and start serving ads in one clean placement.'
+      : 'Add your iOS apps to advertise them or show ads in them.'
+  const quickAction = role === 'advertiser' && dedupedApps.length > 0
+    ? { href: '/dashboard/book', label: 'Book Spots' }
+    : role === 'publisher' && dedupedApps.length > 0
+      ? { href: `/dashboard/apps/${dedupedApps[0].app_id}/publish`, label: 'Open SDK Setup' }
+      : null
+  const emptyTitle = role === 'advertiser'
+    ? 'No advertiser apps yet'
+    : role === 'publisher'
+      ? 'No publisher apps yet'
+      : 'No apps yet'
+  const emptyDescription = role === 'advertiser'
+    ? 'Add the first iOS app you want to promote through Guild Ads.'
+    : role === 'publisher'
+      ? 'Add the first iOS app where you want to show ads.'
+      : 'Add your first iOS app to start advertising it or displaying ads.'
+  const emptyButtonLabel = role === 'advertiser'
+    ? 'Add Your Advertiser App'
+    : role === 'publisher'
+      ? 'Add Your Publisher App'
+      : 'Add Your First App'
 
   return (
     <main className="space-y-8">
@@ -44,9 +95,9 @@ export default async function DashboardPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Apps</h1>
+          <h1 className="text-3xl font-bold">{pageTitle}</h1>
           <p className="text-muted-foreground mt-1">
-            Add your iOS apps to advertise them or show ads in them.
+            {pageDescription}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -55,10 +106,15 @@ export default async function DashboardPage() {
               <Link href="/dashboard/internal/billing">Internal Billing</Link>
             </Button>
           )}
+          {quickAction && (
+            <Button variant="outline" asChild>
+              <Link href={quickAction.href}>{quickAction.label}</Link>
+            </Button>
+          )}
           <Button asChild>
-            <Link href="/dashboard/apps/new">
+            <Link href={addAppHref}>
               <Plus className="h-4 w-4 mr-2" />
-              Add App
+              {addAppLabel}
             </Link>
           </Button>
         </div>
@@ -117,14 +173,14 @@ export default async function DashboardPage() {
         <Card>
           <CardContent className="py-16 text-center">
             <Broadcast className="h-12 w-12 text-muted-foreground mx-auto mb-4" weight="duotone" />
-            <h3 className="text-lg font-semibold mb-2">No apps yet</h3>
+            <h3 className="text-lg font-semibold mb-2">{emptyTitle}</h3>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-              Add your first iOS app to start advertising it or displaying sponsor cards.
+              {emptyDescription}
             </p>
             <Button asChild>
-              <Link href="/dashboard/apps/new">
+              <Link href={addAppHref}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Your First App
+                {emptyButtonLabel}
               </Link>
             </Button>
           </CardContent>

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     default: 'Guild Ads',
     template: '%s | Guild Ads',
   },
-  description: 'Easy, privacy-friendly ad network for indie apps',
+  description: 'Privacy-friendly ad network for indie iOS apps. Advertisers buy predictable weekly reach. Publishers monetize with one tasteful placement.',
   applicationName: 'Guild Ads',
   icons: {
     icon: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     title: 'Guild Ads',
-    description: 'Easy, privacy-friendly ad network for indie apps',
+    description: 'Privacy-friendly ad network for indie iOS apps. Advertisers buy predictable weekly reach. Publishers monetize with one tasteful placement.',
     siteName: 'Guild Ads',
     images: [
       {
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Guild Ads',
-    description: 'Easy, privacy-friendly ad network for indie apps',
+    description: 'Privacy-friendly ad network for indie iOS apps. Advertisers buy predictable weekly reach. Publishers monetize with one tasteful placement.',
     images: ['/twitter-image.png'],
   },
   alternates: {

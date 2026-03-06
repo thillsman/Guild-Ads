@@ -189,9 +189,10 @@ export function NetworkCalculator() {
       <div className="container mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Weekly Network Calculator</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Sample Network Calculator</h2>
             <p className="mx-auto mt-4 max-w-3xl text-muted-foreground">
-              Tune advertiser share and publisher reach to see how money moves each week.
+              These sample apps are placeholders so you can model how weekly advertiser share and
+              publisher reach move money through the network.
             </p>
           </div>
 
@@ -208,8 +209,10 @@ export function NetworkCalculator() {
 
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>Example Weekly Cash Spend</CardTitle>
-              <CardDescription>Adjust this to model larger or smaller cash-funded weeks.</CardDescription>
+              <CardTitle>Model Weekly Cash Spend</CardTitle>
+              <CardDescription>
+                Adjust this to see how a hypothetical week scales up or down.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -243,9 +246,10 @@ export function NetworkCalculator() {
           <div className="mt-8 grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Advertisers (Buy Weekly Share)</CardTitle>
+                <CardTitle>Sample Advertisers</CardTitle>
                 <CardDescription>
-                  If an app buys 40% of the network, it books 40% of weekly network share. Credits can reduce cash due.
+                  If an app buys 40% of the network, it books 40% of weekly share. Credits can
+                  reduce the cash due.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -280,7 +284,7 @@ export function NetworkCalculator() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Publishers (Reach Share)</CardTitle>
+                <CardTitle>Sample Publishers</CardTitle>
                 <CardDescription>
                   70% of weekly cash spend is split by each app&apos;s share of users reached.
                 </CardDescription>
@@ -320,7 +324,7 @@ export function NetworkCalculator() {
             <CardHeader>
               <CardTitle>What Happens When Apps Both Advertise and Publish?</CardTitle>
               <CardDescription>
-                When a publisher is also an advertiser, payout offsets ad spend.
+                Some teams will do both. In that case, payout can offset ad spend.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">

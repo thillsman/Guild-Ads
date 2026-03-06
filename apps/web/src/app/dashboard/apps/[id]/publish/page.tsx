@@ -420,7 +420,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
             <Key className="mx-auto mb-4 h-12 w-12 text-muted-foreground" weight="duotone" />
             <h3 className="mb-2 text-lg font-semibold">No tokens yet</h3>
             <p className="mx-auto mb-6 max-w-sm text-muted-foreground">
-              Create an SDK token to start displaying sponsor cards in your app.
+              Create an SDK token to start displaying ads in your app.
             </p>
             <CreateTokenButton appId={id} />
           </CardContent>

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Broadcast, Megaphone, ChartLine, Storefront, ShieldCheck } from '@phosphor-icons/react/dist/ssr'
 import { NetworkCalculator } from '@/components/home/network-calculator'
+import { FramedAdPreview } from '@/components/home/framed-ad-preview'
 import { getLiveNetworkStats } from '@/lib/network/live-network-stats'
 
 export default async function Home() {
@@ -16,13 +17,18 @@ export default async function Home() {
 
   const supabase = createAdminClient()
   const liveNetworkStats = await getLiveNetworkStats(supabase)
+  const hasLiveNetworkStats = Boolean(
+    liveNetworkStats &&
+      (liveNetworkStats.advertiserAppsCount > 0 ||
+        liveNetworkStats.publisherAppsCount > 0 ||
+        liveNetworkStats.trailing7dUsers > 0)
+  )
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
+    <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto max-w-6xl flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Image
               src="/logo.svg"
               alt="Guild Ads"
@@ -38,7 +44,7 @@ export default async function Home() {
               className="hidden dark:block"
             />
             <span className="text-xl font-bold">Guild Ads</span>
-          </div>
+          </Link>
           <nav className="flex items-center gap-4">
             <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground">
               FAQ
@@ -47,96 +53,184 @@ export default async function Home() {
               <Link href="/login">Login</Link>
             </Button>
             <Button asChild>
-              <Link href="/login">Get Started</Link>
+              <Link href="/#choose-your-path">Get Started</Link>
             </Button>
           </nav>
         </div>
       </header>
 
       <main>
-        {/* Hero */}
         <section className="border-b bg-gradient-to-b from-primary/10 via-background to-background">
           <div className="container mx-auto max-w-6xl px-4 py-20 md:py-24">
-            <div className="mx-auto max-w-5xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-                Built for Indie Apps
-              </p>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Grow downloads, earn revenue, and give users a clean upgrade path.
-              </h1>
-              <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
-                Guild Ads is an easy, privacy-friendly ad network for indie apps. Run good-looking ads in
-                other apps to get installs. Show ads in your own app to earn weekly payouts. Do both and build
-                a simple growth loop without cross-app tracking.
-              </p>
-              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Button size="lg" asChild>
-                  <Link href="/login?role=advertiser">Advertise Your App</Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/login?role=publisher">Monetize Your App</Link>
-                </Button>
+            <div className="grid gap-10 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+                  Privacy-Friendly Ad Network For Indie iOS Apps
+                </p>
+                <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                  Acquire users or monetize with ads that fit the app.
+                </h1>
+                <p className="mt-6 text-lg text-muted-foreground">
+                  Guild Ads helps indie iOS app teams grow from either side of the marketplace.
+                  Advertisers buy predictable weekly reach across other indie apps. Publishers add one
+                  tasteful ad placement, earn weekly payouts, and keep a clean upgrade path
+                  without cross-app tracking.
+                </p>
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+                  <Button size="lg" asChild>
+                    <Link href="/login?role=advertiser">Advertise Your App</Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/login?role=publisher">Monetize Your App</Link>
+                  </Button>
+                </div>
+                <div className="mt-6 flex flex-wrap gap-2 text-sm text-muted-foreground">
+                  <span className="rounded-full border bg-background px-3 py-1">Static ad format</span>
+                  <span className="rounded-full border bg-background px-3 py-1">Weekly share pricing</span>
+                  <span className="rounded-full border bg-background px-3 py-1">No device IDs</span>
+                  <span className="rounded-full border bg-background px-3 py-1">No cross-app tracking</span>
+                </div>
               </div>
 
-              {liveNetworkStats && (
-                <Card className="mt-10 border-primary/30 bg-background/95 text-left shadow-lg">
-                  <CardHeader className="pb-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                      Live Network Snapshot
-                    </p>
-                    <CardTitle className="text-2xl leading-tight sm:text-3xl">
-                      <span className="text-primary">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</span> advertisers are currently running ads in{' '}
-                      <span className="text-primary">{liveNetworkStats.publisherAppsCount.toLocaleString()}</span> publisher apps seen by{' '}
-                      <span className="text-primary">{liveNetworkStats.trailing7dUsers.toLocaleString()}</span> users over the last{' '}
-                      {liveNetworkStats.trailingDays} days.
-                    </CardTitle>
-                    <CardDescription className="text-base">
-                      Advertiser apps come from confirmed bookings for the current week. Publisher reach is summed within each app across the trailing 7 days.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-4 border-t bg-muted/20 pt-6 md:grid-cols-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Advertisers</p>
-                      <p className="mt-1 text-3xl font-bold">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Confirmed for this week</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Publisher apps</p>
-                      <p className="mt-1 text-3xl font-bold">{liveNetworkStats.publisherAppsCount.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Active in the last 7 days</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Publisher users</p>
-                      <p className="mt-1 text-3xl font-bold">{liveNetworkStats.trailing7dUsers.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Summed app uniques, last 7 days</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <div className="space-y-4 lg:pt-10 xl:pt-12">
+                <FramedAdPreview />
+
+                {hasLiveNetworkStats && liveNetworkStats && (
+                  <Card className="border-primary/20 bg-background/90">
+                    <CardHeader className="pb-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                        Live Network Snapshot
+                      </p>
+                      <CardTitle className="text-xl leading-tight">
+                        Active marketplace signal for both sides.
+                      </CardTitle>
+                      <CardDescription>
+                        Current advertisers and trailing 7-day publisher reach, summed within each app.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Advertisers</p>
+                        <p className="mt-1 text-3xl font-bold">
+                          {liveNetworkStats.advertiserAppsCount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Confirmed this week</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Publisher apps</p>
+                        <p className="mt-1 text-3xl font-bold">
+                          {liveNetworkStats.publisherAppsCount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Active in the last 7 days</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Publisher users</p>
+                        <p className="mt-1 text-3xl font-bold">
+                          {liveNetworkStats.trailing7dUsers.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Summed app uniques, last {liveNetworkStats.trailingDays} days
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="choose-your-path" className="container mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Choose the side that fits your growth model
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Start as an advertiser, a publisher, or both. The product is built so an indie team can
+              acquire users, earn revenue, and reinvest without switching tools.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            <Card className="h-full border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-2xl">For Advertisers</CardTitle>
+                <CardDescription className="text-base">
+                  Put your app in front of users inside other indie iOS apps with predictable weekly share.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex h-full flex-col justify-between gap-6">
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li>Buy weekly reach instead of managing noisy auction campaigns.</li>
+                  <li>Use lightweight ad creative that matches the product style of the network.</li>
+                  <li>Show up in apps where users are already engaged, without surveillance-style targeting.</li>
+                </ul>
+                <Button asChild>
+                  <Link href="/login?role=advertiser">Create Advertiser Account</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="h-full border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-2xl">For Publishers</CardTitle>
+                <CardDescription className="text-base">
+                  Add one tasteful ad placement, earn weekly payouts, and keep a clean path to ad-free upgrades.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex h-full flex-col justify-between gap-6">
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li>Monetize with a static, clearly labeled format instead of cluttering your app with ad-tech baggage.</li>
+                  <li>Earn a share of weekly cash spend based on the users your app reaches that week.</li>
+                  <li>Use bonus credits to reinvest in growth and close the loop on your own user acquisition.</li>
+                </ul>
+                <Button variant="outline" asChild>
+                  <Link href="/login?role=publisher">Create Publisher Account</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section className="border-y bg-muted/30">
+          <div className="container mx-auto max-w-6xl px-4 py-16 md:py-20">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Why Guild Ads feels different from ad tech
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                The product promise is simple: one classy format, clear weekly math, and privacy constraints
+                that stay visible in the business model.
+              </p>
             </div>
 
-            <div className="mt-12 grid gap-4 md:grid-cols-3">
-              <Card className="border-primary/20 bg-background/80">
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className="text-base">Make money as a publisher</CardTitle>
+                  <Megaphone className="h-9 w-9 text-primary" weight="duotone" />
+                  <CardTitle className="mt-3 text-lg">One clean ad format</CardTitle>
                   <CardDescription>
-                    Show clean, native-feeling ads in your app and earn weekly payouts from advertiser cash spend.
+                    Static, lightweight placements with a clear label and one CTA. No popups, interstitials, or surprise takeovers.
                   </CardDescription>
                 </CardHeader>
               </Card>
-              <Card className="border-primary/20 bg-background/80">
+
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className="text-base">Get downloads as an advertiser</CardTitle>
+                  <ShieldCheck className="h-9 w-9 text-primary" weight="duotone" />
+                  <CardTitle className="mt-3 text-lg">Privacy by design</CardTitle>
                   <CardDescription>
-                    Put your app in front of users in other indie apps and buy weekly share for predictable delivery.
+                    No device IDs, no behavioral profiles, and no cross-app tracking. Reporting stays aggregate and easier to defend.
                   </CardDescription>
                 </CardHeader>
               </Card>
-              <Card className="border-primary/20 bg-background/80">
+
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className="text-base">Use both sides for a flywheel</CardTitle>
+                  <ChartLine className="h-9 w-9 text-primary" weight="duotone" />
+                  <CardTitle className="mt-3 text-lg">Weekly market math</CardTitle>
                   <CardDescription>
-                    Earn from your audience, reinvest in ads, and fund ad-free subscription upgrades for your power users.
+                    Advertisers buy share of the week. Publishers earn from the weekly cash pool. Pricing and payouts follow posted rules.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -144,12 +238,13 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* How It Works */}
         <section className="container mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How The Network Works Each Week</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              How the network works each week
+            </h2>
             <p className="mt-4 text-muted-foreground">
-              Simple market mechanics, clear math, and transparent payout rules.
+              Enough detail to reduce uncertainty, without turning the homepage into a pricing policy document.
             </p>
           </div>
 
@@ -157,9 +252,9 @@ export default async function Home() {
             <Card>
               <CardHeader>
                 <Megaphone className="h-9 w-9 text-primary" weight="duotone" />
-                <CardTitle className="mt-3 text-lg">1. Advertisers Buy Share</CardTitle>
+                <CardTitle className="mt-3 text-lg">1. Add your app</CardTitle>
                 <CardDescription>
-                  Advertisers purchase a percentage of all ad spots across the network for the week.
+                  Connect your App Store listing so Guild Ads can set up your advertiser or publisher workflow.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -167,9 +262,9 @@ export default async function Home() {
             <Card>
               <CardHeader>
                 <ChartLine className="h-9 w-9 text-primary" weight="duotone" />
-                <CardTitle className="mt-3 text-lg">2. Price Resets Weekly</CardTitle>
+                <CardTitle className="mt-3 text-lg">2. Advertisers book weekly share</CardTitle>
                 <CardDescription>
-                  Next week&apos;s price is set from last week&apos;s inventory and demand.
+                  Buy a percentage of next week&apos;s network inventory instead of juggling bids across auctions.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -177,9 +272,9 @@ export default async function Home() {
             <Card>
               <CardHeader>
                 <Broadcast className="h-9 w-9 text-primary" weight="duotone" />
-                <CardTitle className="mt-3 text-lg">3. Publishers Show Ads</CardTitle>
+                <CardTitle className="mt-3 text-lg">3. Publishers serve ads</CardTitle>
                 <CardDescription>
-                  Add one or more placements with the SDK and start serving ads in your app.
+                  Add one or more placements with the SDK and keep the format lightweight, labeled, and easy on users.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -187,9 +282,9 @@ export default async function Home() {
             <Card>
               <CardHeader>
                 <Storefront className="h-9 w-9 text-primary" weight="duotone" />
-                <CardTitle className="mt-3 text-lg">4. Weekly Payout Distribution</CardTitle>
+                <CardTitle className="mt-3 text-lg">4. The week closes cleanly</CardTitle>
                 <CardDescription>
-                  70% of advertiser cash spend is paid to publishers based on their share of network app-users reached.
+                  Payouts, credits, and next-week pricing are all derived from the closed week using visible rules.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -198,83 +293,73 @@ export default async function Home() {
 
         <NetworkCalculator />
 
-        {/* Advertiser + Publisher Math */}
         <section className="border-y bg-muted/30">
-          <div className="container mx-auto max-w-6xl grid gap-6 px-4 py-16 md:grid-cols-2">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>For Advertisers</CardTitle>
-                <CardDescription>Clear weekly reach with share-based delivery.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>
-                  You buy a share of the network for a week. If you buy <span className="font-semibold text-foreground">30%</span>,
-                  your ad should appear at least <span className="font-semibold text-foreground">30%</span> of delivered inventory, and more when a week is undersold.
-                </p>
-                <p>
-                  This is designed for indie teams that want predictable exposure without surveillance-style targeting.
-                </p>
-              </CardContent>
-            </Card>
+          <div className="container mx-auto max-w-6xl px-4 py-16 md:py-20">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Clear economics for both sides
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                Advertisers get predictable exposure. Publishers get a visible cash pool plus credits that can be turned back into growth.
+              </p>
+            </div>
 
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>For Publishers</CardTitle>
-                <CardDescription>
-                  Earn weekly ad revenue and keep a clear path to ad-free subscriptions.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>
-                  If your app accounts for <span className="font-semibold text-foreground">30%</span> of the network&apos;s app-users reached that week,
-                  you receive <span className="font-semibold text-foreground">30%</span> of the publisher payout pool.
-                </p>
-                <p>
-                  Distinct users are counted <span className="font-semibold text-foreground">within each app</span> to avoid cross-app tracking, so you can monetize responsibly.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Advertiser floor</CardTitle>
+                  <CardDescription>
+                    Book a share of the week and expect that share of delivered inventory, with upside when the week is undersold.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Publisher payout pool</CardTitle>
+                  <CardDescription>
+                    70% of advertiser cash spend is paid to publishers based on their share of counted users reached that week.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card className="h-full border-primary/30">
+                <CardHeader>
+                  <ShieldCheck className="h-9 w-9 text-primary" weight="duotone" />
+                  <CardTitle className="mt-3">Publisher bonus credits</CardTitle>
+                  <CardDescription>
+                    Finalized publisher earnings also generate a permanent 10% bonus credit, making reinvestment part of the product loop.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
           </div>
         </section>
 
-        <section className="container mx-auto max-w-6xl px-4 py-12">
-          <Card className="mx-auto max-w-4xl border-primary/30">
-            <CardHeader>
-              <ShieldCheck className="h-10 w-10 text-primary" weight="duotone" />
-              <CardTitle className="mt-4 text-2xl">Publisher Credits + Bonus</CardTitle>
-              <CardDescription className="text-base">
-                Publishers earn a permanent <span className="font-semibold text-foreground">10% bonus credit</span> after each finalized week.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              <p>
-                This gives indie teams a fast loop: earn from placements, then reinvest in growth across the network. Publisher cash payouts still come from actual advertiser cash spend.
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* CTA */}
         <section className="border-t">
           <div className="container mx-auto max-w-6xl px-4 py-16 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Grow and Monetize Without Creepy Tracking</h2>
+            <h2 className="text-3xl font-bold tracking-tight">
+              Build a cleaner app growth loop
+            </h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              Guild Ads helps indie teams grow in both directions: advertise to get users, publish to earn,
-              and use the upside to fund upgrades that remove ads for your most engaged customers.
+              Start with the side you need today. Promote your app, monetize your audience, or do both and
+              use the upside to fund ad-free upgrades for your most engaged users.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" asChild>
-                <Link href="/login?role=publisher">Start as Publisher</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
                 <Link href="/login?role=advertiser">Start as Advertiser</Link>
               </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/login?role=publisher">Start as Publisher</Link>
+              </Button>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              App Store URLs only for now. Guild Ads is currently built for iOS apps.
+            </p>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto max-w-6xl px-4 text-center text-sm text-muted-foreground">
           <div className="mb-3 flex flex-wrap items-center justify-center gap-4">
