@@ -479,6 +479,17 @@ export type Database = {
           unique_ad_view_rows: number
         }[]
       }
+      get_live_network_stats: {
+        Args: { p_days?: number }
+        Returns: {
+          advertiser_app_count: number
+          current_week_start: string
+          publisher_app_count: number
+          publisher_unique_users: number
+          window_end: string
+          window_start: string
+        }[]
+      }
       get_next_week_start: { Args: never; Returns: string }
       get_publisher_weekly_placement_metrics: {
         Args: { p_app_id: string; p_user_id: string; p_weeks?: number }

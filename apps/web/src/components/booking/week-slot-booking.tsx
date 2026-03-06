@@ -256,7 +256,7 @@ export function WeekSlotBooking({
             <div>
               <p className="font-medium">Book for {formatDate(weekDate)} - {formatDate(weekEndDate)}</p>
               <p className="text-sm text-muted-foreground">
-                ${(basePriceCents / 100).toLocaleString()} for 100% · {totalUsersEstimate.toLocaleString()} users
+                ${(basePriceCents / 100).toLocaleString()} for 100% · {totalUsersEstimate.toLocaleString()} 7-day users
               </p>
             </div>
             <Button asChild>
@@ -303,9 +303,9 @@ export function WeekSlotBooking({
             <p className="text-xs text-muted-foreground">for 100% of impressions</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Estimated Reach</p>
+            <p className="text-sm text-muted-foreground">7-Day Network Reach</p>
             <p className="text-2xl font-bold">{totalUsersEstimate.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">unique users</p>
+            <p className="text-xs text-muted-foreground">summed app uniques</p>
           </div>
         </div>
 
@@ -400,7 +400,7 @@ export function WeekSlotBooking({
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-primary" />
             <div>
-              <p className="text-sm text-muted-foreground">Est. Reach</p>
+              <p className="text-sm text-muted-foreground">Est. 7-Day Reach</p>
               <p className="text-2xl font-bold">{estimatedUsers.toLocaleString()}</p>
             </div>
           </div>

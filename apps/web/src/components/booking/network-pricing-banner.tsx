@@ -105,7 +105,7 @@ export function NetworkPricingBanner() {
               <h3 className="font-semibold">Book ads for {formatDate(weekDate)} - {formatDate(weekEndDate)}</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Transparent weekly pricing across the entire Guild network
+              Weekly pricing across the entire Guild network, based on the last 7 days of publisher reach
             </p>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-1.5">
@@ -114,7 +114,7 @@ export function NetworkPricingBanner() {
               </div>
               <div className="flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-primary" />
-                <span><strong>{slotData.totalUsersEstimate.toLocaleString()}</strong> users</span>
+                <span><strong>{slotData.totalUsersEstimate.toLocaleString()}</strong> 7-day users</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className={`inline-block w-2 h-2 rounded-full ${slotData.availablePercentage > 50 ? 'bg-green-500' : slotData.availablePercentage > 20 ? 'bg-amber-500' : 'bg-red-500'}`} />

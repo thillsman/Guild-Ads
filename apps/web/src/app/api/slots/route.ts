@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@guild-ads/shared'
+import { getLiveNetworkStats, type LiveNetworkStats } from '@/lib/network/live-network-stats'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Disable caching - always fetch fresh data
 export const dynamic = 'force-dynamic'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 function getNextSunday(): Date {
   const today = new Date()
@@ -23,7 +21,11 @@ function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
 }
 
-async function getOrCreateSlot(weekStart: string) {
+async function getOrCreateSlot(
+  supabase: SupabaseClient<Database>,
+  weekStart: string,
+  liveNetworkStats: LiveNetworkStats | null
+) {
   // Use maybeSingle() to not error when no row exists
   let { data: slot } = await supabase
     .from('weekly_slots')
@@ -65,7 +67,7 @@ async function getOrCreateSlot(weekStart: string) {
     weekStart: slot.week_start,
     slotId: slot.slot_id,
     basePriceCents: slot.base_price_cents,
-    totalUsersEstimate: slot.total_users_estimate,
+    totalUsersEstimate: liveNetworkStats?.trailing7dUsers ?? slot.total_users_estimate,
     totalImpressionsEstimate: slot.total_impressions_estimate,
     purchasedPercentage,
     availablePercentage,
@@ -74,14 +76,16 @@ async function getOrCreateSlot(weekStart: string) {
 }
 
 export async function GET() {
+  const supabase = createAdminClient()
   const nextSunday = getNextSunday()
+  const liveNetworkStats = await getLiveNetworkStats(supabase)
 
   // Get slots for the next 4 weeks
   const weeks = []
   for (let i = 0; i < 4; i++) {
     const weekDate = new Date(nextSunday)
     weekDate.setUTCDate(nextSunday.getUTCDate() + (i * 7))
-    const slot = await getOrCreateSlot(formatDate(weekDate))
+    const slot = await getOrCreateSlot(supabase, formatDate(weekDate), liveNetworkStats)
     if (slot) {
       weeks.push({
         ...slot,
@@ -93,6 +97,7 @@ export async function GET() {
 
   return NextResponse.json({
     weeks,
+    networkStats: liveNetworkStats,
     // Keep backwards compatibility - return first week as main slot
     ...weeks[0],
   })

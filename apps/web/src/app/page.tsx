@@ -1,11 +1,18 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Broadcast, Megaphone, ChartLine, Storefront, ShieldCheck } from '@phosphor-icons/react/dist/ssr'
 import { NetworkCalculator } from '@/components/home/network-calculator'
+import { getLiveNetworkStats } from '@/lib/network/live-network-stats'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = createAdminClient()
+  const liveNetworkStats = await getLiveNetworkStats(supabase)
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -63,6 +70,42 @@ export default function Home() {
                   <Link href="/login?role=publisher">Monetize Your App</Link>
                 </Button>
               </div>
+
+              {liveNetworkStats && (
+                <Card className="mt-10 border-primary/30 bg-background/95 text-left shadow-lg">
+                  <CardHeader className="pb-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                      Live Network Snapshot
+                    </p>
+                    <CardTitle className="text-2xl leading-tight sm:text-3xl">
+                      <span className="text-primary">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</span> apps are currently running ads in{' '}
+                      <span className="text-primary">{liveNetworkStats.publisherAppsCount.toLocaleString()}</span> publisher apps seen by{' '}
+                      <span className="text-primary">{liveNetworkStats.trailing7dUsers.toLocaleString()}</span> users over the last{' '}
+                      {liveNetworkStats.trailingDays} days.
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Advertiser apps come from confirmed bookings for the current week. Publisher reach is summed within each app across the trailing 7 days.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 border-t bg-muted/20 pt-6 md:grid-cols-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Advertiser apps</p>
+                      <p className="mt-1 text-3xl font-bold">{liveNetworkStats.advertiserAppsCount.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Confirmed for this week</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Publisher apps</p>
+                      <p className="mt-1 text-3xl font-bold">{liveNetworkStats.publisherAppsCount.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Active in the last 7 days</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Publisher users</p>
+                      <p className="mt-1 text-3xl font-bold">{liveNetworkStats.trailing7dUsers.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Summed app uniques, last 7 days</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <div className="mt-12 grid gap-4 md:grid-cols-3">
