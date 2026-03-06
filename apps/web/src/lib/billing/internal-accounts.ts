@@ -23,7 +23,7 @@ export async function getInternalAccountPolicy(
     return DEFAULT_POLICY
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('internal_account_policies')
     .select('active, can_bypass_checkout, no_fill_exempt, can_manage_internal')
     .eq('user_id', userID)
@@ -40,4 +40,3 @@ export async function getInternalAccountPolicy(
     canManageInternal: data.can_manage_internal === true,
   }
 }
-

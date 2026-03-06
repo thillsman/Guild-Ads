@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   const supabase = createAdminClient()
-  const { data: accountRow, error } = await (supabase as any)
+  const { data: accountRow, error } = await supabase
     .from('publisher_connect_accounts')
     .select('*')
     .eq('user_id', user.id)
@@ -34,7 +34,7 @@ export async function GET() {
     const stripe = getStripe()
     const stripeAccount = await stripe.accounts.retrieve(accountRow.stripe_account_id)
 
-    await (supabase as any)
+    await supabase
       .from('publisher_connect_accounts')
       .update({
         details_submitted: stripeAccount.details_submitted,
@@ -57,4 +57,3 @@ export async function GET() {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-

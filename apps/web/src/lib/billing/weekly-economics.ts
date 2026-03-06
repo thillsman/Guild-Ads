@@ -98,7 +98,7 @@ async function hasSlotPurchases(
   supabase: SupabaseClient<Database>,
   weekStart: string
 ): Promise<boolean> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('slot_purchases')
     .select('purchase_id, weekly_slots!inner(week_start)')
     .eq('weekly_slots.week_start', weekStart)
@@ -116,7 +116,7 @@ export async function getWeeklySoldPercentage(
   supabase: SupabaseClient<Database>,
   weekStart: string
 ): Promise<number> {
-  const { data, error } = await (supabase as any).rpc('get_weekly_sold_percentage', {
+  const { data, error } = await supabase.rpc('get_weekly_sold_percentage', {
     p_week_start: weekStart,
   })
 
@@ -283,7 +283,7 @@ export async function finalizeClosedWeeks(
       continue
     }
 
-    const { error: accrueError } = await (supabase as any).rpc('run_weekly_earnings_accrual', {
+    const { error: accrueError } = await supabase.rpc('run_weekly_earnings_accrual', {
       p_week_start: row.week_start,
     })
     if (accrueError) {
@@ -292,7 +292,7 @@ export async function finalizeClosedWeeks(
 
     accruedWeeks += 1
 
-    const { error: bonusError } = await (supabase as any).rpc('grant_publisher_bonus_credits', {
+    const { error: bonusError } = await supabase.rpc('grant_publisher_bonus_credits', {
       p_week_start: row.week_start,
     })
     if (bonusError) {
@@ -302,7 +302,7 @@ export async function finalizeClosedWeeks(
     bonusWeeks += 1
   }
 
-  await (supabase as any)
+  await supabase
     .from('publisher_weekly_earnings')
     .update({
       payout_status: 'eligible',

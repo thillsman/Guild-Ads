@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { Tables } from '@guild-ads/shared'
 import { createAdminClient, getAuthUser } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -6,6 +7,11 @@ export const dynamic = 'force-dynamic'
 interface ConvertCreditsBody {
   amountCents?: unknown
 }
+
+type ConvertibleEarningsRow = Pick<
+  Tables<'publisher_weekly_earnings'>,
+  'earning_id' | 'gross_earnings_cents' | 'converted_cents'
+>
 
 function asPositiveInt(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : Number(value)
@@ -37,7 +43,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient()
 
   const nowISO = new Date().toISOString()
-  const { data: eligibleRows, error: eligibleError } = await (supabase as any)
+  const { data: eligibleRows, error: eligibleError } = await supabase
     .from('publisher_weekly_earnings')
     .select('earning_id, gross_earnings_cents, converted_cents')
     .eq('user_id', user.id)
@@ -49,10 +55,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to load eligible earnings.' }, { status: 500 })
   }
 
-  const rows = Array.isArray(eligibleRows) ? eligibleRows : []
-  const availableCents = rows.reduce((sum: number, row: any) => {
-    const gross = typeof row.gross_earnings_cents === 'number' ? row.gross_earnings_cents : 0
-    const converted = typeof row.converted_cents === 'number' ? row.converted_cents : 0
+  const rows: ConvertibleEarningsRow[] = eligibleRows ?? []
+  const availableCents = rows.reduce((sum, row) => {
+    const gross = row.gross_earnings_cents
+    const converted = row.converted_cents
     return sum + Math.max(0, gross - converted)
   }, 0)
 
@@ -68,15 +74,15 @@ export async function POST(request: Request) {
       break
     }
 
-    const gross = typeof row.gross_earnings_cents === 'number' ? row.gross_earnings_cents : 0
-    const converted = typeof row.converted_cents === 'number' ? row.converted_cents : 0
+    const gross = row.gross_earnings_cents
+    const converted = row.converted_cents
     const remainingInRow = Math.max(0, gross - converted)
     if (remainingInRow <= 0) {
       continue
     }
 
     const applied = Math.min(remaining, remainingInRow)
-    const { error: rowUpdateError } = await (supabase as any)
+    const { error: rowUpdateError } = await supabase
       .from('publisher_weekly_earnings')
       .update({
         converted_cents: converted + applied,
@@ -91,7 +97,7 @@ export async function POST(request: Request) {
     remaining -= applied
   }
 
-  const { error: debitError } = await (supabase as any)
+  const { error: debitError } = await supabase
     .from('credit_ledger_entries')
     .insert({
       user_id: user.id,
@@ -107,7 +113,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to record conversion debit.' }, { status: 500 })
   }
 
-  const { error: creditError } = await (supabase as any)
+  const { error: creditError } = await supabase
     .from('credit_ledger_entries')
     .insert({
       user_id: user.id,

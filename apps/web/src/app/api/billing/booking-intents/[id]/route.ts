@@ -21,7 +21,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const supabase = createAdminClient()
-  const { data: intent, error } = await (supabase as any)
+  const { data: intent, error } = await supabase
     .from('billing_booking_intents')
     .select(`
       booking_intent_id,
@@ -72,4 +72,3 @@ export async function GET(_request: Request, context: RouteContext) {
     confirmedAt: intent.confirmed_at,
   })
 }
-

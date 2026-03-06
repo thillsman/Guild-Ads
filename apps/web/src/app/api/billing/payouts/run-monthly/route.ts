@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   try {
     await finalizeClosedWeeks(supabase, now)
 
-    const { data: existingBatch } = await (supabase as any)
+    const { data: existingBatch } = await supabase
       .from('payout_batches')
       .select('batch_id, status')
       .eq('batch_month', batchMonth)
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         })
       }
 
-      await (supabase as any)
+      await supabase
         .from('payout_batches')
         .update({
           status: 'running',
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         })
         .eq('batch_id', batchID)
     } else {
-      const { data: createdBatch, error: createBatchError } = await (supabase as any)
+      const { data: createdBatch, error: createBatchError } = await supabase
         .from('payout_batches')
         .insert({
           batch_month: batchMonth,
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       batchID = createdBatch.batch_id
     }
 
-    const { data: eligibleRows, error: eligibleError } = await (supabase as any)
+    const { data: eligibleRows, error: eligibleError } = await supabase
       .from('publisher_weekly_earnings')
       .select('earning_id, user_id, gross_earnings_cents, converted_cents')
       .eq('payout_status', 'eligible')
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
 
       if (aggregate.amountCents < PAYOUT_MINIMUM_CENTS) {
         skippedItems += 1
-        await (supabase as any)
+        await supabase
           .from('payout_items')
           .insert({
             batch_id: batchID,
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
         continue
       }
 
-      const { data: connectAccount } = await (supabase as any)
+      const { data: connectAccount } = await supabase
         .from('publisher_connect_accounts')
         .select('stripe_account_id, payouts_enabled')
         .eq('user_id', userID)
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
 
       if (!connectAccount?.stripe_account_id || connectAccount.payouts_enabled !== true) {
         skippedItems += 1
-        await (supabase as any)
+        await supabase
           .from('payout_items')
           .insert({
             batch_id: batchID,
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
           },
         })
 
-        const { data: payoutItem, error: payoutItemError } = await (supabase as any)
+        const { data: payoutItem, error: payoutItemError } = await supabase
           .from('payout_items')
           .insert({
             batch_id: batchID,
@@ -192,7 +192,7 @@ export async function POST(request: Request) {
           throw payoutItemError ?? new Error('Failed to store payout item.')
         }
 
-        await (supabase as any)
+        await supabase
           .from('publisher_weekly_earnings')
           .update({
             payout_status: 'paid',
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
         totalAmountCents += aggregate.amountCents
       } catch (transferError) {
         failedItems += 1
-        await (supabase as any)
+        await supabase
           .from('payout_items')
           .insert({
             batch_id: batchID,
@@ -220,7 +220,7 @@ export async function POST(request: Request) {
     }
 
     const finalStatus = failedItems > 0 ? 'failed' : 'completed'
-    await (supabase as any)
+    await supabase
       .from('payout_batches')
       .update({
         status: finalStatus,

@@ -40,7 +40,7 @@ export async function createBookingIntent(
     throw new Error('Percentage must be between 1 and 40.')
   }
 
-  const { data: campaign, error: campaignError } = await (supabase as any)
+  const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
     .select('campaign_id, user_id, status')
     .eq('campaign_id', input.campaignID)
@@ -55,7 +55,7 @@ export async function createBookingIntent(
     throw new Error('Campaign not found.')
   }
 
-  const { data: slot, error: slotError } = await (supabase as any)
+  const { data: slot, error: slotError } = await supabase
     .from('weekly_slots')
     .select('slot_id, week_start, base_price_cents')
     .eq('slot_id', input.slotID)
@@ -87,7 +87,7 @@ export async function createBookingIntent(
   const cashDueCents = bypassCashDue ? 0 : Math.max(0, quotedPriceCents - creditsAppliedCents)
   const initialStatus = cashDueCents > 0 ? 'created' : 'processing'
 
-  const { data: intent, error: intentError } = await (supabase as any)
+  const { data: intent, error: intentError } = await supabase
     .from('billing_booking_intents')
     .insert({
       user_id: input.userID,
@@ -107,7 +107,7 @@ export async function createBookingIntent(
     throw intentError
   }
 
-  const bookingIntentID = intent.booking_intent_id as string
+  const bookingIntentID = intent.booking_intent_id
 
   if (creditsAppliedCents > 0) {
     await createCreditHold(supabase, {
@@ -117,9 +117,9 @@ export async function createBookingIntent(
     })
   }
 
-  let status = intent.status as string
+  let status = intent.status
   if (cashDueCents === 0) {
-    const { data: confirmationRows, error: confirmError } = await (supabase as any).rpc('confirm_booking_intent_atomic', {
+    const { data: confirmationRows, error: confirmError } = await supabase.rpc('confirm_booking_intent_atomic', {
       p_booking_intent_id: bookingIntentID,
     })
 
@@ -138,7 +138,7 @@ export async function createBookingIntent(
         reason: confirmation?.reason ?? 'confirm_failed',
       })
       status = confirmation?.reason === 'capacity_exceeded' ? 'refunded_capacity_conflict' : 'failed'
-      await (supabase as any)
+      await supabase
         .from('billing_booking_intents')
         .update({
           status,
@@ -168,4 +168,3 @@ export async function createBookingIntent(
     isInternal: internalPolicy.active && internalPolicy.canBypassCheckout,
   }
 }
-

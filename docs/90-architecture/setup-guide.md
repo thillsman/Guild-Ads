@@ -39,7 +39,7 @@ cp apps/web/.env.example apps/web/.env.local
 ```bash
 supabase db reset
 ```
-This runs migrations + seed data.
+This runs migrations plus the current development seed. The seed is intentionally minimal, so expect a clean schema with no sample apps, campaigns, or bookings preloaded.
 
 ### 5. Generate TypeScript types
 ```bash
@@ -104,7 +104,7 @@ If you prefer Vercel for the web app:
 | `pnpm dev:web` | Start web only |
 | `pnpm build` | Build all packages |
 | `pnpm db:migrate` | Push migrations to linked DB |
-| `pnpm db:reset` | Reset local DB (migrations + seed) |
+| `pnpm db:reset` | Reset local DB (migrations + minimal seed) |
 | `pnpm db:types` | Regenerate TypeScript types |
 | `supabase start` | Start local Supabase |
 | `supabase stop` | Stop local Supabase |

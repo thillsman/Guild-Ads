@@ -85,7 +85,7 @@ export default async function BookPage() {
     .eq('status', 'scheduled')
     .order('created_at', { ascending: false })
 
-  const { data: rawBillingHistory, error: billingHistoryError } = await (supabase as any)
+  const { data: rawBillingHistory, error: billingHistoryError } = await supabase
     .from('billing_booking_intents')
     .select(`
       booking_intent_id,

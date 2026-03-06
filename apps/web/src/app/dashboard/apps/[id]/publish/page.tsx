@@ -111,7 +111,7 @@ export default async function AppPublishPage({ params }: Props) {
     .is('revoked_at', null)
     .order('created_at', { ascending: false })
 
-  const { data: recentServeAttempts } = await (supabase as any)
+  const { data: recentServeAttempts } = await supabase
     .from('serve_attempts')
     .select('attempt_id, response_type, decision_reason, sdk_version, placement_id, created_at')
     .eq('app_id', id)
@@ -125,7 +125,7 @@ export default async function AppPublishPage({ params }: Props) {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  const { data: connectAccount, error: connectAccountError } = await (supabase as any)
+  const { data: connectAccount, error: connectAccountError } = await supabase
     .from('publisher_connect_accounts')
     .select('stripe_account_id, payouts_enabled, charges_enabled, details_submitted')
     .eq('user_id', user.id)
@@ -135,7 +135,7 @@ export default async function AppPublishPage({ params }: Props) {
     console.error('[dashboard] failed to fetch publisher connect account', connectAccountError)
   }
 
-  const { data: rawWeeklyEarnings, error: weeklyEarningsError } = await (supabase as any)
+  const { data: rawWeeklyEarnings, error: weeklyEarningsError } = await supabase
     .from('publisher_weekly_earnings')
     .select('week_start, gross_earnings_cents, bonus_credit_cents, converted_cents, payout_status, hold_until, paid_at')
     .eq('publisher_app_id', id)

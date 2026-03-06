@@ -11,7 +11,7 @@ async function getExistingEventStatus(
   supabase: ReturnType<typeof createAdminClient>,
   eventID: string
 ): Promise<{ processed: boolean } | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('billing_webhook_events')
     .select('processed')
     .eq('provider', 'stripe')
@@ -33,13 +33,15 @@ async function upsertWebhookEvent(
   supabase: ReturnType<typeof createAdminClient>,
   event: Stripe.Event
 ): Promise<void> {
-  const { error } = await (supabase as any)
+  const payload = JSON.parse(JSON.stringify(event))
+
+  const { error } = await supabase
     .from('billing_webhook_events')
     .upsert({
       provider: 'stripe',
       external_event_id: event.id,
       event_type: event.type,
-      payload: event,
+      payload,
       processed: false,
       processing_error: null,
     }, {
@@ -56,7 +58,7 @@ async function markWebhookProcessed(
   supabase: ReturnType<typeof createAdminClient>,
   eventID: string
 ): Promise<void> {
-  await (supabase as any)
+  await supabase
     .from('billing_webhook_events')
     .update({
       processed: true,
@@ -72,7 +74,7 @@ async function markWebhookFailed(
   eventID: string,
   errorMessage: string
 ): Promise<void> {
-  await (supabase as any)
+  await supabase
     .from('billing_webhook_events')
     .update({
       processed: false,
@@ -91,7 +93,7 @@ async function findBookingIntent(
   }
 ) {
   if (input.bookingIntentID) {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('billing_booking_intents')
       .select('*')
       .eq('booking_intent_id', input.bookingIntentID)
@@ -100,7 +102,7 @@ async function findBookingIntent(
   }
 
   if (input.checkoutSessionID) {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('billing_booking_intents')
       .select('*')
       .eq('stripe_checkout_session_id', input.checkoutSessionID)
@@ -109,7 +111,7 @@ async function findBookingIntent(
   }
 
   if (input.paymentIntentID) {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('billing_booking_intents')
       .select('*')
       .eq('stripe_payment_intent_id', input.paymentIntentID)
@@ -141,7 +143,7 @@ async function confirmBookingAfterPayment(
     return
   }
 
-  await (supabase as any)
+  await supabase
     .from('billing_booking_intents')
     .update({
       status: 'processing',
@@ -151,7 +153,7 @@ async function confirmBookingAfterPayment(
     })
     .eq('booking_intent_id', input.bookingIntentID)
 
-  const { data: confirmationRows, error: confirmError } = await (supabase as any).rpc('confirm_booking_intent_atomic', {
+  const { data: confirmationRows, error: confirmError } = await supabase.rpc('confirm_booking_intent_atomic', {
     p_booking_intent_id: input.bookingIntentID,
   })
 
@@ -185,7 +187,7 @@ async function confirmBookingAfterPayment(
       },
     })
 
-    await (supabase as any)
+    await supabase
       .from('billing_booking_intents')
       .update({
         status: 'refunded_capacity_conflict',
@@ -195,7 +197,7 @@ async function confirmBookingAfterPayment(
       })
       .eq('booking_intent_id', input.bookingIntentID)
   } else {
-    await (supabase as any)
+    await supabase
       .from('billing_booking_intents')
       .update({
         status: 'failed',
@@ -221,7 +223,7 @@ async function handleStripeEvent(
         return
       }
 
-      await (supabase as any)
+      await supabase
         .from('billing_booking_intents')
         .update({
           status: 'processing',
@@ -277,7 +279,7 @@ async function handleStripeEvent(
         reason: 'payment_failed',
       })
 
-      await (supabase as any)
+      await supabase
         .from('billing_booking_intents')
         .update({
           status: 'failed',
@@ -300,7 +302,7 @@ async function handleStripeEvent(
         reason: 'checkout_expired',
       })
 
-      await (supabase as any)
+      await supabase
         .from('billing_booking_intents')
         .update({
           status: 'expired',
@@ -327,7 +329,7 @@ async function handleStripeEvent(
         reason: 'charge_refunded',
       })
 
-      await (supabase as any)
+      await supabase
         .from('billing_booking_intents')
         .update({
           status: 'refunded_capacity_conflict',
@@ -378,4 +380,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-

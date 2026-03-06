@@ -213,6 +213,486 @@ export type Database = {
           },
         ]
       }
+      billing_booking_intents: {
+        Row: {
+          booking_intent_id: string
+          user_id: string
+          campaign_id: string
+          slot_id: string
+          percentage_purchased: number
+          quoted_price_cents: number
+          credits_applied_cents: number
+          cash_due_cents: number
+          currency: string
+          status: string
+          failure_reason: string | null
+          is_internal: boolean
+          stripe_customer_id: string | null
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_charge_id: string | null
+          stripe_refund_id: string | null
+          confirmed_purchase_id: string | null
+          created_at: string
+          updated_at: string
+          confirmed_at: string | null
+        }
+        Insert: {
+          booking_intent_id?: string
+          user_id: string
+          campaign_id: string
+          slot_id: string
+          percentage_purchased: number
+          quoted_price_cents: number
+          credits_applied_cents?: number
+          cash_due_cents: number
+          currency?: string
+          status?: string
+          failure_reason?: string | null
+          is_internal?: boolean
+          stripe_customer_id?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_refund_id?: string | null
+          confirmed_purchase_id?: string | null
+          created_at?: string
+          updated_at?: string
+          confirmed_at?: string | null
+        }
+        Update: {
+          booking_intent_id?: string
+          user_id?: string
+          campaign_id?: string
+          slot_id?: string
+          percentage_purchased?: number
+          quoted_price_cents?: number
+          credits_applied_cents?: number
+          cash_due_cents?: number
+          currency?: string
+          status?: string
+          failure_reason?: string | null
+          is_internal?: boolean
+          stripe_customer_id?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_refund_id?: string | null
+          confirmed_purchase_id?: string | null
+          created_at?: string
+          updated_at?: string
+          confirmed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_booking_intents_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "billing_booking_intents_confirmed_purchase_id_fkey"
+            columns: ["confirmed_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "slot_purchases"
+            referencedColumns: ["purchase_id"]
+          },
+          {
+            foreignKeyName: "billing_booking_intents_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_slots"
+            referencedColumns: ["slot_id"]
+          },
+        ]
+      }
+      billing_customers: {
+        Row: {
+          user_id: string
+          stripe_customer_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          stripe_customer_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          stripe_customer_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      billing_webhook_events: {
+        Row: {
+          webhook_event_id: string
+          provider: string
+          external_event_id: string
+          event_type: string
+          payload: Json
+          processed: boolean
+          processed_at: string | null
+          processing_error: string | null
+          created_at: string
+        }
+        Insert: {
+          webhook_event_id?: string
+          provider: string
+          external_event_id: string
+          event_type: string
+          payload: Json
+          processed?: boolean
+          processed_at?: string | null
+          processing_error?: string | null
+          created_at?: string
+        }
+        Update: {
+          webhook_event_id?: string
+          provider?: string
+          external_event_id?: string
+          event_type?: string
+          payload?: Json
+          processed?: boolean
+          processed_at?: string | null
+          processing_error?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      credit_holds: {
+        Row: {
+          hold_id: string
+          user_id: string
+          booking_intent_id: string
+          amount_cents: number
+          status: string
+          released_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          hold_id?: string
+          user_id: string
+          booking_intent_id: string
+          amount_cents: number
+          status?: string
+          released_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          hold_id?: string
+          user_id?: string
+          booking_intent_id?: string
+          amount_cents?: number
+          status?: string
+          released_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_holds_booking_intent_id_fkey"
+            columns: ["booking_intent_id"]
+            isOneToOne: false
+            referencedRelation: "billing_booking_intents"
+            referencedColumns: ["booking_intent_id"]
+          },
+        ]
+      }
+      credit_ledger_entries: {
+        Row: {
+          entry_id: string
+          user_id: string
+          amount_cents: number
+          entry_type: string
+          source_table: string | null
+          source_id: string | null
+          expires_at: string | null
+          metadata: Json
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          entry_id?: string
+          user_id: string
+          amount_cents: number
+          entry_type: string
+          source_table?: string | null
+          source_id?: string | null
+          expires_at?: string | null
+          metadata?: Json
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          entry_id?: string
+          user_id?: string
+          amount_cents?: number
+          entry_type?: string
+          source_table?: string | null
+          source_id?: string | null
+          expires_at?: string | null
+          metadata?: Json
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      internal_account_policies: {
+        Row: {
+          user_id: string
+          active: boolean
+          can_bypass_checkout: boolean
+          no_fill_exempt: boolean
+          can_manage_internal: boolean
+          notes: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          active?: boolean
+          can_bypass_checkout?: boolean
+          no_fill_exempt?: boolean
+          can_manage_internal?: boolean
+          notes?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          active?: boolean
+          can_bypass_checkout?: boolean
+          no_fill_exempt?: boolean
+          can_manage_internal?: boolean
+          notes?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payout_batches: {
+        Row: {
+          batch_id: string
+          batch_month: string
+          status: string
+          started_at: string
+          completed_at: string | null
+          total_items: number
+          total_amount_cents: number
+          error_message: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          batch_id?: string
+          batch_month: string
+          status?: string
+          started_at?: string
+          completed_at?: string | null
+          total_items?: number
+          total_amount_cents?: number
+          error_message?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          batch_id?: string
+          batch_month?: string
+          status?: string
+          started_at?: string
+          completed_at?: string | null
+          total_items?: number
+          total_amount_cents?: number
+          error_message?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      payout_items: {
+        Row: {
+          payout_item_id: string
+          batch_id: string
+          user_id: string
+          stripe_account_id: string
+          amount_cents: number
+          status: string
+          stripe_transfer_id: string | null
+          failure_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          payout_item_id?: string
+          batch_id: string
+          user_id: string
+          stripe_account_id: string
+          amount_cents: number
+          status?: string
+          stripe_transfer_id?: string | null
+          failure_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          payout_item_id?: string
+          batch_id?: string
+          user_id?: string
+          stripe_account_id?: string
+          amount_cents?: number
+          status?: string
+          stripe_transfer_id?: string | null
+          failure_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "payout_batches"
+            referencedColumns: ["batch_id"]
+          },
+        ]
+      }
+      publisher_connect_accounts: {
+        Row: {
+          user_id: string
+          stripe_account_id: string
+          details_submitted: boolean
+          charges_enabled: boolean
+          payouts_enabled: boolean
+          onboarding_completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          stripe_account_id: string
+          details_submitted?: boolean
+          charges_enabled?: boolean
+          payouts_enabled?: boolean
+          onboarding_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          stripe_account_id?: string
+          details_submitted?: boolean
+          charges_enabled?: boolean
+          payouts_enabled?: boolean
+          onboarding_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      publisher_weekly_earnings: {
+        Row: {
+          earning_id: string
+          week_start: string
+          publisher_app_id: string
+          user_id: string
+          unique_users: number
+          network_unique_users: number
+          share_ratio: number
+          pool_cents: number
+          gross_earnings_cents: number
+          converted_cents: number
+          hold_until: string
+          payout_status: string
+          payout_item_id: string | null
+          paid_at: string | null
+          created_at: string
+          updated_at: string
+          cash_spend_cents: number
+          platform_reserve_cents: number
+          bonus_credit_cents: number
+          bonus_credit_entry_id: string | null
+          bonus_credited_at: string | null
+        }
+        Insert: {
+          earning_id?: string
+          week_start: string
+          publisher_app_id: string
+          user_id: string
+          unique_users?: number
+          network_unique_users?: number
+          share_ratio?: number
+          pool_cents?: number
+          gross_earnings_cents?: number
+          converted_cents?: number
+          hold_until: string
+          payout_status?: string
+          payout_item_id?: string | null
+          paid_at?: string | null
+          created_at?: string
+          updated_at?: string
+          cash_spend_cents?: number
+          platform_reserve_cents?: number
+          bonus_credit_cents?: number
+          bonus_credit_entry_id?: string | null
+          bonus_credited_at?: string | null
+        }
+        Update: {
+          earning_id?: string
+          week_start?: string
+          publisher_app_id?: string
+          user_id?: string
+          unique_users?: number
+          network_unique_users?: number
+          share_ratio?: number
+          pool_cents?: number
+          gross_earnings_cents?: number
+          converted_cents?: number
+          hold_until?: string
+          payout_status?: string
+          payout_item_id?: string | null
+          paid_at?: string | null
+          created_at?: string
+          updated_at?: string
+          cash_spend_cents?: number
+          platform_reserve_cents?: number
+          bonus_credit_cents?: number
+          bonus_credit_entry_id?: string | null
+          bonus_credited_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publisher_weekly_earnings_bonus_credit_entry_id_fkey"
+            columns: ["bonus_credit_entry_id"]
+            isOneToOne: false
+            referencedRelation: "credit_ledger_entries"
+            referencedColumns: ["entry_id"]
+          },
+          {
+            foreignKeyName: "publisher_weekly_earnings_payout_item_id_fkey"
+            columns: ["payout_item_id"]
+            isOneToOne: false
+            referencedRelation: "payout_items"
+            referencedColumns: ["payout_item_id"]
+          },
+          {
+            foreignKeyName: "publisher_weekly_earnings_publisher_app_id_fkey"
+            columns: ["publisher_app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["app_id"]
+          },
+        ]
+      }
       serve_attempts: {
         Row: {
           app_id: string
@@ -285,45 +765,70 @@ export type Database = {
       }
       slot_purchases: {
         Row: {
+          booking_intent_id: string | null
           cash_paid_cents: number
           campaign_id: string | null
           credits_applied_cents: number
           created_at: string
+          is_internal: boolean
+          payment_provider: string | null
+          payment_reference: string | null
           percentage_purchased: number
           price_cents: number
           purchase_id: string
+          refund_reference: string | null
+          refunded_at: string | null
           slot_id: string
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          booking_intent_id?: string | null
           cash_paid_cents?: number
           campaign_id?: string | null
           credits_applied_cents?: number
           created_at?: string
+          is_internal?: boolean
+          payment_provider?: string | null
+          payment_reference?: string | null
           percentage_purchased: number
           price_cents: number
           purchase_id?: string
+          refund_reference?: string | null
+          refunded_at?: string | null
           slot_id: string
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          booking_intent_id?: string | null
           cash_paid_cents?: number
           campaign_id?: string | null
           credits_applied_cents?: number
           created_at?: string
+          is_internal?: boolean
+          payment_provider?: string | null
+          payment_reference?: string | null
           percentage_purchased?: number
           price_cents?: number
           purchase_id?: string
+          refund_reference?: string | null
+          refunded_at?: string | null
           slot_id?: string
           status?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "slot_purchases_booking_intent_id_fkey"
+            columns: ["booking_intent_id"]
+            isOneToOne: false
+            referencedRelation: "billing_booking_intents"
+            referencedColumns: ["booking_intent_id"]
+          },
           {
             foreignKeyName: "slot_purchases_campaign_id_fkey"
             columns: ["campaign_id"]
@@ -442,6 +947,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_weekly_price_adjustment: {
+        Args: { p_base_price_cents: number; p_sold_percentage: number }
+        Returns: number
+      }
+      confirm_booking_intent_atomic: {
+        Args: { p_booking_intent_id: string }
+        Returns: {
+          purchase_id: string | null
+          reason: string | null
+          success: boolean | null
+        }[]
+      }
       get_advertiser_weekly_metrics: {
         Args: { p_app_id?: string; p_user_id: string; p_weeks?: number }
         Returns: {
@@ -542,11 +1059,22 @@ export type Database = {
           window_start: string
         }[]
       }
+      get_user_credit_balance: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       get_weekly_sold_percentage: {
         Args: { p_week_start: string }
         Returns: number
       }
-      get_next_week_start: { Args: never; Returns: string }
+      grant_publisher_bonus_credits: {
+        Args: { p_week_start: string }
+        Returns: {
+          rows_credited: number
+          total_bonus_cents: number
+          week_start: string | null
+        }[]
+      }
       get_publisher_weekly_placement_metrics: {
         Args: { p_app_id: string; p_user_id: string; p_weeks?: number }
         Returns: {
@@ -556,22 +1084,6 @@ export type Database = {
           impressions: number
           no_fill_requests: number
           placement_id: string
-          request_users: number
-          unique_click_users: number
-          unique_filled_users: number
-          unique_users: number
-          week_start: string
-        }[]
-      }
-      get_publisher_portfolio_weekly_totals: {
-        Args: { p_user_id: string; p_weeks?: number }
-        Returns: {
-          app_count: number
-          clicks: number
-          error_requests: number
-          filled_requests: number
-          impressions: number
-          no_fill_requests: number
           request_users: number
           unique_click_users: number
           unique_filled_users: number
@@ -594,14 +1106,13 @@ export type Database = {
           week_start: string
         }[]
       }
-      get_week_availability: {
-        Args: { week_date: string }
+      run_weekly_earnings_accrual: {
+        Args: { p_week_start: string }
         Returns: {
-          available_percentage: number
-          base_price_cents: number
-          purchased_percentage: number
-          total_percentage: number
-          total_users_estimate: number
+          network_unique_users: number
+          pool_cents: number
+          rows_upserted: number
+          week_start: string | null
         }[]
       }
     }

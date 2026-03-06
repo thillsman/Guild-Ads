@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
     : null
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('credit_ledger_entries')
     .insert({
       user_id: userID,
@@ -66,4 +66,3 @@ export async function POST(request: Request) {
     expiresAt,
   })
 }
-

@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     return allApps.findIndex((candidate) => candidate.bundle_identifier === app.bundle_identifier) === index
   })
 
-  const { data: internalPolicy } = await (supabase as any)
+  const { data: internalPolicy } = await supabase
     .from('internal_account_policies')
     .select('active, can_manage_internal')
     .eq('user_id', user.id)

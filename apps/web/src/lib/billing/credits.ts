@@ -5,7 +5,7 @@ export async function getCreditBalance(
   supabase: SupabaseClient<Database>,
   userID: string
 ): Promise<number> {
-  const { data, error } = await (supabase as any).rpc('get_user_credit_balance', {
+  const { data, error } = await supabase.rpc('get_user_credit_balance', {
     p_user_id: userID,
   })
 
@@ -24,7 +24,7 @@ export async function getHeldCreditBalance(
   supabase: SupabaseClient<Database>,
   userID: string
 ): Promise<number> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('credit_holds')
     .select('amount_cents')
     .eq('user_id', userID)
@@ -63,7 +63,7 @@ export async function createCreditHold(
     return
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('credit_holds')
     .insert({
       user_id: input.userID,
@@ -83,7 +83,7 @@ export async function captureCreditHold(
     bookingIntentID: string
   }
 ): Promise<void> {
-  const { data: hold, error: holdError } = await (supabase as any)
+  const { data: hold, error: holdError } = await supabase
     .from('credit_holds')
     .select('hold_id, user_id, amount_cents, status')
     .eq('booking_intent_id', input.bookingIntentID)
@@ -97,7 +97,7 @@ export async function captureCreditHold(
     return
   }
 
-  const { error: ledgerError } = await (supabase as any)
+  const { error: ledgerError } = await supabase
     .from('credit_ledger_entries')
     .insert({
       user_id: hold.user_id,
@@ -114,7 +114,7 @@ export async function captureCreditHold(
     throw ledgerError
   }
 
-  const { error: holdUpdateError } = await (supabase as any)
+  const { error: holdUpdateError } = await supabase
     .from('credit_holds')
     .update({
       status: 'captured',
@@ -134,7 +134,7 @@ export async function releaseCreditHold(
     reason: string
   }
 ): Promise<void> {
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('credit_holds')
     .update({
       status: 'released',
@@ -148,4 +148,3 @@ export async function releaseCreditHold(
     throw error
   }
 }
-

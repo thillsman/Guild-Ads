@@ -23,7 +23,7 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const supabase = createAdminClient()
-  const { data: intent, error: intentError } = await (supabase as any)
+  const { data: intent, error: intentError } = await supabase
     .from('billing_booking_intents')
     .select(`
       booking_intent_id,
@@ -68,7 +68,7 @@ export async function POST(request: Request, context: RouteContext) {
     let stripeCustomerID = typeof intent.stripe_customer_id === 'string' ? intent.stripe_customer_id : null
 
     if (!stripeCustomerID) {
-      const { data: existingCustomer } = await (supabase as any)
+      const { data: existingCustomer } = await supabase
         .from('billing_customers')
         .select('stripe_customer_id')
         .eq('user_id', user.id)
@@ -86,7 +86,7 @@ export async function POST(request: Request, context: RouteContext) {
 
         stripeCustomerID = createdCustomer.id
 
-        await (supabase as any)
+        await supabase
           .from('billing_customers')
           .upsert({
             user_id: user.id,
@@ -137,7 +137,7 @@ export async function POST(request: Request, context: RouteContext) {
       },
     })
 
-    await (supabase as any)
+    await supabase
       .from('billing_booking_intents')
       .update({
         status: 'awaiting_payment',

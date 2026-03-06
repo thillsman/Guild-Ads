@@ -10,7 +10,7 @@ export async function canManageInternalAccounts(
     return true
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('internal_account_policies')
     .select('active, can_manage_internal')
     .eq('user_id', userID)

@@ -1,50 +1,12 @@
 import type { User } from '@supabase/supabase-js'
-import type { Database } from '@guild-ads/shared'
+import type { Database, Tables } from '@guild-ads/shared'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-interface AppRow {
-  app_id: string
-  user_id: string | null
-  name: string
-  bundle_identifier: string
-  icon_url: string | null
-  created_at: string
-}
-
-interface CampaignRow {
-  campaign_id: string
-  app_id: string | null
-}
-
-interface SlotPurchaseRow {
-  campaign_id: string | null
-  cash_paid_cents: number
-  credits_applied_cents: number
-  price_cents: number
-  refunded_at: string | null
-  status: string
-}
-
-interface PublisherWeeklyEarningsRow {
-  bonus_credit_cents: number
-  converted_cents: number
-  earning_id: string
-  gross_earnings_cents: number
-  hold_until: string
-  paid_at: string | null
-  payout_status: string
-  publisher_app_id: string
-  user_id: string
-  week_start: string
-}
-
-interface PublisherConnectAccountRow {
-  charges_enabled: boolean
-  details_submitted: boolean
-  payouts_enabled: boolean
-  stripe_account_id: string
-  user_id: string
-}
+type AppRow = Tables<'apps'>
+type CampaignRow = Tables<'campaigns'>
+type SlotPurchaseRow = Tables<'slot_purchases'>
+type PublisherWeeklyEarningsRow = Tables<'publisher_weekly_earnings'>
+type PublisherConnectAccountRow = Tables<'publisher_connect_accounts'>
 
 export interface AdminUserDirectoryApp {
   appId: string
@@ -151,15 +113,15 @@ export async function getAdminUserDirectory(
     supabase
       .from('campaigns')
       .select('campaign_id, app_id'),
-    (supabase as any)
+    supabase
       .from('slot_purchases')
       .select('campaign_id, price_cents, cash_paid_cents, credits_applied_cents, refunded_at, status')
       .in('status', ['confirmed', 'completed']),
-    (supabase as any)
+    supabase
       .from('publisher_weekly_earnings')
       .select('earning_id, week_start, publisher_app_id, user_id, gross_earnings_cents, bonus_credit_cents, converted_cents, payout_status, hold_until, paid_at')
       .order('week_start', { ascending: false }),
-    (supabase as any)
+    supabase
       .from('publisher_connect_accounts')
       .select('user_id, stripe_account_id, payouts_enabled, details_submitted, charges_enabled'),
   ])

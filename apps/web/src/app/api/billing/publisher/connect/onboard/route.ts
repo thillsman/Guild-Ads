@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const stripe = getStripe()
 
   try {
-    const { data: existing } = await (supabase as any)
+    const { data: existing } = await supabase
       .from('publisher_connect_accounts')
       .select('stripe_account_id')
       .eq('user_id', user.id)
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
       stripeAccountID = account.id
 
-      await (supabase as any)
+      await supabase
         .from('publisher_connect_accounts')
         .upsert({
           user_id: user.id,

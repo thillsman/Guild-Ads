@@ -10,7 +10,7 @@ export default async function InternalBillingPage() {
   }
 
   const supabase = createAdminClient()
-  const { data: policy } = await (supabase as any)
+  const { data: policy } = await supabase
     .from('internal_account_policies')
     .select('active, can_manage_internal')
     .eq('user_id', user.id)

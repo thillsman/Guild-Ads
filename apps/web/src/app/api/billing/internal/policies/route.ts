@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('internal_account_policies')
     .upsert(payload)
     .select('user_id, active, can_bypass_checkout, no_fill_exempt, can_manage_internal, notes')
@@ -62,4 +62,3 @@ export async function POST(request: Request) {
     policy: data,
   })
 }
-

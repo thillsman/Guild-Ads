@@ -90,7 +90,7 @@ export default async function AppAdvertisePage({ params }: Props) {
     notFound()
   }
 
-  const { data: campaigns } = await (supabase as any)
+  const { data: campaigns } = await supabase
     .from('campaigns')
     .select(`
       campaign_id,
@@ -115,7 +115,7 @@ export default async function AppAdvertisePage({ params }: Props) {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  const { data: rawUpcomingPurchases, error: upcomingPurchasesError } = await (supabase as any)
+  const { data: rawUpcomingPurchases, error: upcomingPurchasesError } = await supabase
     .from('slot_purchases')
     .select(`
       purchase_id,
