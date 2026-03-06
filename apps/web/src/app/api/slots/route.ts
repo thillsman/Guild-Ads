@@ -3,54 +3,38 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@guild-ads/shared'
 import { getLiveNetworkStats, type LiveNetworkStats } from '@/lib/network/live-network-stats'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  addWeeksToWeekStartUTC,
+  ensureBookableWeekSlot,
+  ensurePlanningWeekSlot,
+  getCurrentWeekStartUTC,
+} from '@/lib/billing/weekly-economics'
 
 // Disable caching - always fetch fresh data
 export const dynamic = 'force-dynamic'
 
-function getNextSunday(): Date {
-  const today = new Date()
-  const dayOfWeek = today.getUTCDay()
-  const daysUntilSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek
-  const nextSunday = new Date(today)
-  nextSunday.setUTCDate(today.getUTCDate() + daysUntilSunday)
-  nextSunday.setUTCHours(0, 0, 0, 0)
-  return nextSunday
-}
-
-function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0]
-}
-
 async function getOrCreateSlot(
   supabase: SupabaseClient<Database>,
   weekStart: string,
-  liveNetworkStats: LiveNetworkStats | null
+  liveNetworkStats: LiveNetworkStats | null,
+  input: {
+    isBookableWeek: boolean
+    placeholderPriceCents: number
+  }
 ) {
-  // Use maybeSingle() to not error when no row exists
-  let { data: slot } = await supabase
-    .from('weekly_slots')
-    .select('*')
-    .eq('week_start', weekStart)
-    .maybeSingle()
+  const slot = input.isBookableWeek
+    ? await ensureBookableWeekSlot(supabase, {
+        weekStart,
+        totalUsersEstimate: liveNetworkStats?.trailing7dUsers ?? null,
+      })
+    : await ensurePlanningWeekSlot(supabase, {
+        weekStart,
+        placeholderPriceCents: input.placeholderPriceCents,
+        totalUsersEstimate: liveNetworkStats?.trailing7dUsers ?? null,
+      })
 
   if (!slot) {
-    // Try to insert, using upsert to handle race conditions
-    const { data: newSlot, error } = await supabase
-      .from('weekly_slots')
-      .upsert({
-        week_start: weekStart,
-        base_price_cents: 100000, // $1000
-        total_impressions_estimate: 100000,
-        total_users_estimate: 10000,
-      }, { onConflict: 'week_start' })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Failed to create slot for', weekStart, error)
-      return null
-    }
-    slot = newSlot
+    return null
   }
 
   // Get purchases for this slot
@@ -77,16 +61,22 @@ async function getOrCreateSlot(
 
 export async function GET() {
   const supabase = createAdminClient()
-  const nextSunday = getNextSunday()
   const liveNetworkStats = await getLiveNetworkStats(supabase)
+  const nextWeekStart = liveNetworkStats?.currentWeekStart
+    ? addWeeksToWeekStartUTC(liveNetworkStats.currentWeekStart, 1)
+    : addWeeksToWeekStartUTC(getCurrentWeekStartUTC(new Date()), 1)
 
   // Get slots for the next 4 weeks
   const weeks = []
+  let placeholderPriceCents = 100000
   for (let i = 0; i < 4; i++) {
-    const weekDate = new Date(nextSunday)
-    weekDate.setUTCDate(nextSunday.getUTCDate() + (i * 7))
-    const slot = await getOrCreateSlot(supabase, formatDate(weekDate), liveNetworkStats)
+    const weekStart = addWeeksToWeekStartUTC(nextWeekStart, i)
+    const slot = await getOrCreateSlot(supabase, weekStart, liveNetworkStats, {
+      isBookableWeek: i === 0,
+      placeholderPriceCents,
+    })
     if (slot) {
+      placeholderPriceCents = slot.basePriceCents
       weeks.push({
         ...slot,
         isNextWeek: i === 0,

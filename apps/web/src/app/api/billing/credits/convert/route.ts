@@ -91,9 +91,6 @@ export async function POST(request: Request) {
     remaining -= applied
   }
 
-  const bonusCents = Math.round(amountCents * 0.1)
-  const grantedCents = amountCents + bonusCents
-
   const { error: debitError } = await (supabase as any)
     .from('credit_ledger_entries')
     .insert({
@@ -110,28 +107,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to record conversion debit.' }, { status: 500 })
   }
 
-  const { error: bonusError } = await (supabase as any)
+  const { error: creditError } = await (supabase as any)
     .from('credit_ledger_entries')
     .insert({
       user_id: user.id,
-      amount_cents: grantedCents,
-      entry_type: 'cash_conversion_bonus',
+      amount_cents: amountCents,
+      entry_type: 'cash_conversion_credit',
       source_table: 'publisher_weekly_earnings',
       metadata: {
         converted_from_cash_cents: amountCents,
-        bonus_cents: bonusCents,
       },
     })
 
-  if (bonusError) {
+  if (creditError) {
     return NextResponse.json({ error: 'Failed to record conversion credit.' }, { status: 500 })
   }
 
   return NextResponse.json({
     ok: true,
     convertedCents: amountCents,
-    bonusCents,
-    creditGrantedCents: grantedCents,
+    bonusCents: 0,
+    creditGrantedCents: amountCents,
   })
 }
-

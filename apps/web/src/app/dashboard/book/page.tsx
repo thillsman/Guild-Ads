@@ -314,11 +314,15 @@ export default async function BookPage() {
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <p>
               <strong className="text-foreground">Transparent & Fair:</strong> We set a flat weekly price for 100%
-              of the network's ad inventory. You buy a percentage of that, paying proportionally.
+              of the network&apos;s ad inventory. You buy a percentage of that, paying proportionally.
             </p>
             <p>
               <strong className="text-foreground">Dynamic Pricing:</strong> Each week, if we sell out, the price
               increases slightly. If inventory goes unsold, the price decreases. This ensures fair market pricing.
+            </p>
+            <p>
+              <strong className="text-foreground">Credits vs. Cash:</strong> Credits can reduce your out-of-pocket cost,
+              but publisher cash payouts are funded only from actual cash spend.
             </p>
             <p>
               <strong className="text-foreground">40% Cap:</strong> No single advertiser can buy more than 40% of

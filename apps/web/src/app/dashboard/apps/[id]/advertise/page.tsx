@@ -13,6 +13,8 @@ interface Props {
 interface UpcomingSlotPurchaseRow {
   purchase_id: string
   percentage_purchased: number | string
+  cash_paid_cents: number | string
+  credits_applied_cents: number | string
   price_cents: number | string
   payment_provider: string | null
   created_at: string
@@ -25,7 +27,9 @@ interface UpcomingSlotPurchase {
   campaignName: string
   weekStart: string
   percentage: number
-  priceCents: number
+  bookedValueCents: number
+  cashPaidCents: number
+  creditsAppliedCents: number
   paymentProvider: string
   createdAt: string
 }
@@ -99,6 +103,8 @@ export default async function AppAdvertisePage({ params }: Props) {
       slot_purchases (
         percentage_purchased,
         price_cents,
+        cash_paid_cents,
+        credits_applied_cents,
         status,
         weekly_slots (
           week_start
@@ -115,6 +121,8 @@ export default async function AppAdvertisePage({ params }: Props) {
       purchase_id,
       percentage_purchased,
       price_cents,
+      cash_paid_cents,
+      credits_applied_cents,
       payment_provider,
       created_at,
       campaigns (
@@ -149,7 +157,9 @@ export default async function AppAdvertisePage({ params }: Props) {
         campaignName: typeof campaign.name === 'string' ? campaign.name : 'Campaign',
         weekStart: slot.week_start,
         percentage: toCount(row.percentage_purchased),
-        priceCents: toCount(row.price_cents),
+        bookedValueCents: toCount(row.price_cents),
+        cashPaidCents: toCount(row.cash_paid_cents),
+        creditsAppliedCents: toCount(row.credits_applied_cents),
         paymentProvider: typeof row.payment_provider === 'string' ? row.payment_provider : 'stripe',
         createdAt: row.created_at,
         appId: campaign.app_id,
@@ -213,7 +223,9 @@ export default async function AppAdvertisePage({ params }: Props) {
                     <th className="py-2 pr-3 font-medium">Week</th>
                     <th className="py-2 pr-3 font-medium">Campaign</th>
                     <th className="py-2 pr-3 font-medium">Share</th>
-                    <th className="py-2 pr-3 font-medium">Amount</th>
+                    <th className="py-2 pr-3 font-medium">Booked Value</th>
+                    <th className="py-2 pr-3 font-medium">Cash Paid</th>
+                    <th className="py-2 pr-3 font-medium">Credits Used</th>
                     <th className="py-2 pr-3 font-medium">Paid Via</th>
                     <th className="py-2 font-medium">Purchased</th>
                   </tr>
@@ -224,7 +236,9 @@ export default async function AppAdvertisePage({ params }: Props) {
                       <td className="py-2 pr-3 font-medium">{formatWeekRange(slot.weekStart)}</td>
                       <td className="py-2 pr-3">{slot.campaignName}</td>
                       <td className="py-2 pr-3">{slot.percentage}%</td>
-                      <td className="py-2 pr-3">${(slot.priceCents / 100).toFixed(2)}</td>
+                      <td className="py-2 pr-3">${(slot.bookedValueCents / 100).toFixed(2)}</td>
+                      <td className="py-2 pr-3">${(slot.cashPaidCents / 100).toFixed(2)}</td>
+                      <td className="py-2 pr-3">${(slot.creditsAppliedCents / 100).toFixed(2)}</td>
                       <td className="py-2 pr-3">{paymentProviderLabel(slot.paymentProvider)}</td>
                       <td className="py-2">{new Date(slot.createdAt).toLocaleDateString()}</td>
                     </tr>
@@ -317,7 +331,13 @@ export default async function AppAdvertisePage({ params }: Props) {
                     {booking && (
                       <>
                         <span>{toCount(booking.percentage_purchased)}% of network</span>
-                        <span>${(toCount(booking.price_cents) / 100).toFixed(2)}</span>
+                        <span>
+                          ${(
+                            toCount(booking.cash_paid_cents ?? 0) / 100
+                          ).toFixed(2)} cash + ${(
+                            toCount(booking.credits_applied_cents ?? 0) / 100
+                          ).toFixed(2)} credits
+                        </span>
                       </>
                     )}
                   </div>

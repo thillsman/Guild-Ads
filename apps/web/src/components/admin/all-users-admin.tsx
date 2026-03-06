@@ -209,26 +209,30 @@ export function AllUsersAdmin({ users }: AllUsersAdminProps) {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Apps</p>
                 <p className="mt-1 text-lg font-semibold">{user.totals.appCount.toLocaleString()}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Paid To Advertise</p>
-                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.advertiserSpendCents)}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Booked Value</p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.bookedSpendCents)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Cash Paid</p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.cashSpendCents)}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Earned As Publisher</p>
                 <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.publisherEarningsCents)}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Still Owed</p>
-                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.unpaidPayoutCents)}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Bonus Credits</p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.publisherBonusCreditsCents)}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Already Paid Out</p>
-                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.paidOutCents)}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Still Owed</p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(user.totals.unpaidPayoutCents)}</p>
               </div>
             </div>
 
@@ -236,19 +240,22 @@ export function AllUsersAdmin({ users }: AllUsersAdminProps) {
               <div>
                 <h2 className="text-lg font-semibold">Apps</h2>
                 <p className="text-sm text-muted-foreground">
-                  Per-app advertiser spend and publisher earnings totals.
+                  Per-app booked value, cash spend, credits used, publisher earnings, and issued bonus credits.
                 </p>
               </div>
 
               {user.apps.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[760px] text-sm">
+                  <table className="w-full min-w-[960px] text-sm">
                     <thead>
                       <tr className="border-b text-left text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">App</th>
                         <th className="py-2 pr-3 font-medium">Bundle ID</th>
-                        <th className="py-2 pr-3 font-medium">Paid To Advertise</th>
-                        <th className="py-2 font-medium">Earned As Publisher</th>
+                        <th className="py-2 pr-3 font-medium">Booked Value</th>
+                        <th className="py-2 pr-3 font-medium">Cash Paid</th>
+                        <th className="py-2 pr-3 font-medium">Credits Used</th>
+                        <th className="py-2 pr-3 font-medium">Publisher Earnings</th>
+                        <th className="py-2 font-medium">Bonus Credits</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -256,8 +263,11 @@ export function AllUsersAdmin({ users }: AllUsersAdminProps) {
                         <tr key={app.appId} className="border-b last:border-0">
                           <td className="py-2 pr-3 font-medium">{app.name}</td>
                           <td className="py-2 pr-3 font-mono text-xs text-muted-foreground">{app.bundleIdentifier}</td>
-                          <td className="py-2 pr-3">{formatCurrency(app.advertiserSpendCents)}</td>
-                          <td className="py-2">{formatCurrency(app.publisherEarningsCents)}</td>
+                          <td className="py-2 pr-3">{formatCurrency(app.bookedSpendCents)}</td>
+                          <td className="py-2 pr-3">{formatCurrency(app.cashSpendCents)}</td>
+                          <td className="py-2 pr-3">{formatCurrency(app.creditsUsedCents)}</td>
+                          <td className="py-2 pr-3">{formatCurrency(app.publisherEarningsCents)}</td>
+                          <td className="py-2">{formatCurrency(app.publisherBonusCreditsCents)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -332,12 +342,13 @@ export function AllUsersAdmin({ users }: AllUsersAdminProps) {
 
                 {user.payoutRows.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[980px] text-sm">
+                    <table className="w-full min-w-[1120px] text-sm">
                       <thead>
                         <tr className="border-b text-left text-muted-foreground">
                           <th className="py-2 pr-3 font-medium">Week</th>
                           <th className="py-2 pr-3 font-medium">App</th>
                           <th className="py-2 pr-3 font-medium">Gross Earned</th>
+                          <th className="py-2 pr-3 font-medium">Bonus Credit</th>
                           <th className="py-2 pr-3 font-medium">Net Due</th>
                           <th className="py-2 pr-3 font-medium">Status</th>
                           <th className="py-2 pr-3 font-medium">Timing</th>
@@ -362,6 +373,7 @@ export function AllUsersAdmin({ users }: AllUsersAdminProps) {
                                   </p>
                                 )}
                               </td>
+                              <td className="py-2 pr-3">{formatCurrency(row.bonusCreditCents)}</td>
                               <td className="py-2 pr-3">{formatCurrency(row.netPayoutCents)}</td>
                               <td className="py-2 pr-3">
                                 <span className={cn('inline-flex items-center rounded-full px-2 py-1 text-xs', payoutStatusClass(row.payoutStatus))}>

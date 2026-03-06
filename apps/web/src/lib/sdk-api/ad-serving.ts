@@ -52,7 +52,6 @@ export type WeightedAdFillReason =
   | 'fallback_any_status_fill'
 
 export type WeightedAdNoFillReason =
-  | 'weighted_no_fill'
   | 'no_inventory'
 
 export type WeightedAdDecision =
@@ -382,15 +381,7 @@ export async function getWeightedAdDecisionForPublisher(
     weekStart,
   })
 
-  let weekChoice: PurchaseCandidate | null = null
-  if (!neverNoFill) {
-    const noFillPercentage = Math.max(0, 100 - weekCandidates.eligiblePurchasedPercentage)
-    if (Math.random() >= noFillPercentage / 100) {
-      weekChoice = chooseWeightedCandidate(weekCandidates.candidates)
-    }
-  } else {
-    weekChoice = chooseWeightedCandidate(weekCandidates.candidates)
-  }
+  const weekChoice = chooseWeightedCandidate(weekCandidates.candidates)
 
   if (weekChoice) {
     return {
@@ -403,7 +394,7 @@ export async function getWeightedAdDecisionForPublisher(
   if (!neverNoFill) {
     return {
       kind: 'no_fill',
-      reason: weekCandidates.candidates.length > 0 ? 'weighted_no_fill' : 'no_inventory',
+      reason: 'no_inventory',
     }
   }
 

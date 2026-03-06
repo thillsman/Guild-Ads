@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/billing/stripe'
+import { finalizeClosedWeeks } from '@/lib/billing/weekly-economics'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -9,13 +10,6 @@ const PAYOUT_MINIMUM_CENTS = 2500
 
 function formatDateUTC(date: Date): string {
   return date.toISOString().split('T')[0]
-}
-
-function getCurrentWeekStartUTC(now: Date = new Date()): string {
-  const current = new Date(now)
-  current.setUTCHours(0, 0, 0, 0)
-  current.setUTCDate(current.getUTCDate() - current.getUTCDay())
-  return formatDateUTC(current)
 }
 
 function getCurrentMonthStartUTC(now: Date = new Date()): string {
@@ -46,42 +40,10 @@ export async function POST(request: Request) {
   const supabase = createAdminClient()
   const stripe = getStripe()
   const now = new Date()
-  const currentWeekStart = getCurrentWeekStartUTC(now)
   const batchMonth = getCurrentMonthStartUTC(now)
 
   try {
-    const { data: weeksToAccrue, error: weeksError } = await (supabase as any)
-      .from('weekly_slots')
-      .select('week_start')
-      .lt('week_start', currentWeekStart)
-      .order('week_start', { ascending: true })
-
-    if (weeksError) {
-      throw weeksError
-    }
-
-    for (const week of (weeksToAccrue ?? [])) {
-      if (!week?.week_start) {
-        continue
-      }
-
-      const { error: accrueError } = await (supabase as any).rpc('run_weekly_earnings_accrual', {
-        p_week_start: week.week_start,
-      })
-
-      if (accrueError) {
-        throw accrueError
-      }
-    }
-
-    await (supabase as any)
-      .from('publisher_weekly_earnings')
-      .update({
-        payout_status: 'eligible',
-        updated_at: now.toISOString(),
-      })
-      .eq('payout_status', 'accrued')
-      .lte('hold_until', now.toISOString())
+    await finalizeClosedWeeks(supabase, now)
 
     const { data: existingBatch } = await (supabase as any)
       .from('payout_batches')
@@ -286,4 +248,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-

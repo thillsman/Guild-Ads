@@ -21,8 +21,10 @@ export default async function AdminAllUsersPage() {
   const supabase = createAdminClient()
   const users = await getAdminUserDirectory(supabase)
   const totalApps = users.reduce((sum, entry) => sum + entry.totals.appCount, 0)
-  const totalSpendCents = users.reduce((sum, entry) => sum + entry.totals.advertiserSpendCents, 0)
+  const totalBookedCents = users.reduce((sum, entry) => sum + entry.totals.bookedSpendCents, 0)
+  const totalCashSpendCents = users.reduce((sum, entry) => sum + entry.totals.cashSpendCents, 0)
   const totalEarningsCents = users.reduce((sum, entry) => sum + entry.totals.publisherEarningsCents, 0)
+  const totalBonusCreditsCents = users.reduce((sum, entry) => sum + entry.totals.publisherBonusCreditsCents, 0)
 
   return (
     <main className="space-y-8">
@@ -40,10 +42,10 @@ export default async function AdminAllUsersPage() {
         <CardHeader>
           <CardTitle>All Users</CardTitle>
           <CardDescription>
-            Auth users, their apps, advertiser spend, publisher earnings, credits, and payout status.
+            Auth users, their apps, booked value, cash spend, credits, publisher earnings, bonus credits, and payout status.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-4">
+        <CardContent className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
           <div className="rounded-lg bg-muted/40 p-4">
             <p className="text-sm text-muted-foreground">Users</p>
             <p className="mt-1 text-3xl font-bold">{users.length.toLocaleString()}</p>
@@ -53,15 +55,27 @@ export default async function AdminAllUsersPage() {
             <p className="mt-1 text-3xl font-bold">{totalApps.toLocaleString()}</p>
           </div>
           <div className="rounded-lg bg-muted/40 p-4">
-            <p className="text-sm text-muted-foreground">Advertiser Spend</p>
+            <p className="text-sm text-muted-foreground">Booked Value</p>
             <p className="mt-1 text-3xl font-bold">
-              ${(totalSpendCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${(totalBookedCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/40 p-4">
+            <p className="text-sm text-muted-foreground">Cash Spend</p>
+            <p className="mt-1 text-3xl font-bold">
+              ${(totalCashSpendCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="rounded-lg bg-muted/40 p-4">
             <p className="text-sm text-muted-foreground">Publisher Earnings</p>
             <p className="mt-1 text-3xl font-bold">
               ${(totalEarningsCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/40 p-4">
+            <p className="text-sm text-muted-foreground">Bonus Credits</p>
+            <p className="mt-1 text-3xl font-bold">
+              ${(totalBonusCreditsCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </CardContent>

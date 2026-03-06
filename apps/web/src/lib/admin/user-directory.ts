@@ -18,12 +18,15 @@ interface CampaignRow {
 
 interface SlotPurchaseRow {
   campaign_id: string | null
+  cash_paid_cents: number
+  credits_applied_cents: number
   price_cents: number
   refunded_at: string | null
   status: string
 }
 
 interface PublisherWeeklyEarningsRow {
+  bonus_credit_cents: number
   converted_cents: number
   earning_id: string
   gross_earnings_cents: number
@@ -44,17 +47,21 @@ interface PublisherConnectAccountRow {
 }
 
 export interface AdminUserDirectoryApp {
-  advertiserSpendCents: number
   appId: string
+  bookedSpendCents: number
   bundleIdentifier: string
+  cashSpendCents: number
+  creditsUsedCents: number
   iconUrl: string | null
   name: string
+  publisherBonusCreditsCents: number
   publisherEarningsCents: number
 }
 
 export interface AdminUserDirectoryPayout {
   appId: string
   appName: string
+  bonusCreditCents: number
   convertedCents: number
   earningId: string
   grossEarningsCents: number
@@ -78,9 +85,12 @@ export interface AdminUserDirectoryUser {
   lastSignInAt: string | null
   payoutRows: AdminUserDirectoryPayout[]
   totals: {
-    advertiserSpendCents: number
     appCount: number
+    bookedSpendCents: number
+    cashSpendCents: number
+    creditsUsedCents: number
     paidOutCents: number
+    publisherBonusCreditsCents: number
     publisherEarningsCents: number
     unpaidPayoutCents: number
   }
@@ -143,11 +153,11 @@ export async function getAdminUserDirectory(
       .select('campaign_id, app_id'),
     (supabase as any)
       .from('slot_purchases')
-      .select('campaign_id, price_cents, refunded_at, status')
+      .select('campaign_id, price_cents, cash_paid_cents, credits_applied_cents, refunded_at, status')
       .in('status', ['confirmed', 'completed']),
     (supabase as any)
       .from('publisher_weekly_earnings')
-      .select('earning_id, week_start, publisher_app_id, user_id, gross_earnings_cents, converted_cents, payout_status, hold_until, paid_at')
+      .select('earning_id, week_start, publisher_app_id, user_id, gross_earnings_cents, bonus_credit_cents, converted_cents, payout_status, hold_until, paid_at')
       .order('week_start', { ascending: false }),
     (supabase as any)
       .from('publisher_connect_accounts')
@@ -186,8 +196,11 @@ export async function getAdminUserDirectory(
       .filter((campaign): campaign is CampaignRow & { app_id: string } => typeof campaign.app_id === 'string')
       .map((campaign) => [campaign.campaign_id, campaign.app_id])
   )
-  const advertiserSpendByApp = new Map<string, number>()
+  const bookedSpendByApp = new Map<string, number>()
+  const cashSpendByApp = new Map<string, number>()
+  const creditsUsedByApp = new Map<string, number>()
   const publisherEarningsByApp = new Map<string, number>()
+  const publisherBonusCreditsByApp = new Map<string, number>()
   const payoutRowsByUser = new Map<string, AdminUserDirectoryPayout[]>()
   const connectAccountByUser = new Map(connectAccounts.map((account) => [account.user_id, account]))
 
@@ -201,16 +214,23 @@ export async function getAdminUserDirectory(
       continue
     }
 
-    advertiserSpendByApp.set(appId, (advertiserSpendByApp.get(appId) ?? 0) + toNumber(purchase.price_cents))
+    bookedSpendByApp.set(appId, (bookedSpendByApp.get(appId) ?? 0) + toNumber(purchase.price_cents))
+    cashSpendByApp.set(appId, (cashSpendByApp.get(appId) ?? 0) + toNumber(purchase.cash_paid_cents))
+    creditsUsedByApp.set(appId, (creditsUsedByApp.get(appId) ?? 0) + toNumber(purchase.credits_applied_cents))
   }
 
   for (const earning of earnings) {
     const gross = toNumber(earning.gross_earnings_cents)
+    const bonus = toNumber(earning.bonus_credit_cents)
     const converted = toNumber(earning.converted_cents)
     const net = Math.max(0, gross - converted)
     publisherEarningsByApp.set(
       earning.publisher_app_id,
       (publisherEarningsByApp.get(earning.publisher_app_id) ?? 0) + gross
+    )
+    publisherBonusCreditsByApp.set(
+      earning.publisher_app_id,
+      (publisherBonusCreditsByApp.get(earning.publisher_app_id) ?? 0) + bonus
     )
 
     const app = appById.get(earning.publisher_app_id)
@@ -218,6 +238,7 @@ export async function getAdminUserDirectory(
     rows.push({
       appId: earning.publisher_app_id,
       appName: app?.name ?? 'Unknown App',
+      bonusCreditCents: bonus,
       convertedCents: converted,
       earningId: earning.earning_id,
       grossEarningsCents: gross,
@@ -234,11 +255,14 @@ export async function getAdminUserDirectory(
     const userApps = apps
       .filter((app) => app.user_id === user.id)
       .map((app) => ({
-        advertiserSpendCents: advertiserSpendByApp.get(app.app_id) ?? 0,
         appId: app.app_id,
+        bookedSpendCents: bookedSpendByApp.get(app.app_id) ?? 0,
         bundleIdentifier: app.bundle_identifier,
+        cashSpendCents: cashSpendByApp.get(app.app_id) ?? 0,
+        creditsUsedCents: creditsUsedByApp.get(app.app_id) ?? 0,
         iconUrl: app.icon_url,
         name: app.name,
+        publisherBonusCreditsCents: publisherBonusCreditsByApp.get(app.app_id) ?? 0,
         publisherEarningsCents: publisherEarningsByApp.get(app.app_id) ?? 0,
       }))
 
@@ -252,6 +276,7 @@ export async function getAdminUserDirectory(
 
     const totals = payoutRows.reduce((accumulator, row) => {
       accumulator.publisherEarningsCents += row.grossEarningsCents
+      accumulator.publisherBonusCreditsCents += row.bonusCreditCents
 
       if (row.payoutStatus === 'paid') {
         accumulator.paidOutCents += row.netPayoutCents
@@ -261,9 +286,12 @@ export async function getAdminUserDirectory(
 
       return accumulator
     }, {
-      advertiserSpendCents: userApps.reduce((sum, app) => sum + app.advertiserSpendCents, 0),
       appCount: userApps.length,
+      bookedSpendCents: userApps.reduce((sum, app) => sum + app.bookedSpendCents, 0),
+      cashSpendCents: userApps.reduce((sum, app) => sum + app.cashSpendCents, 0),
+      creditsUsedCents: userApps.reduce((sum, app) => sum + app.creditsUsedCents, 0),
       paidOutCents: 0,
+      publisherBonusCreditsCents: 0,
       publisherEarningsCents: 0,
       unpaidPayoutCents: 0,
     })
@@ -294,8 +322,8 @@ export async function getAdminUserDirectory(
       return right.totals.appCount - left.totals.appCount
     }
 
-    const leftActivity = left.totals.advertiserSpendCents + left.totals.publisherEarningsCents
-    const rightActivity = right.totals.advertiserSpendCents + right.totals.publisherEarningsCents
+    const leftActivity = left.totals.bookedSpendCents + left.totals.publisherEarningsCents
+    const rightActivity = right.totals.bookedSpendCents + right.totals.publisherEarningsCents
     if (leftActivity !== rightActivity) {
       return rightActivity - leftActivity
     }

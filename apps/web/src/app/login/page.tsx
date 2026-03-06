@@ -187,7 +187,10 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
+          By continuing, you agree to our{' '}
+          <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
         </p>
       </div>
     </div>

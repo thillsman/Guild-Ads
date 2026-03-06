@@ -208,8 +208,8 @@ export function NetworkCalculator() {
 
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>Example Weekly Network Cost</CardTitle>
-              <CardDescription>Adjust this to model larger or smaller weeks.</CardDescription>
+              <CardTitle>Example Weekly Cash Spend</CardTitle>
+              <CardDescription>Adjust this to model larger or smaller cash-funded weeks.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -245,7 +245,7 @@ export function NetworkCalculator() {
               <CardHeader>
                 <CardTitle>Advertisers (Buy Weekly Share)</CardTitle>
                 <CardDescription>
-                  If an app buys 40% of the network, it pays 40% of weekly network cost.
+                  If an app buys 40% of the network, it books 40% of weekly network share. Credits can reduce cash due.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -282,7 +282,7 @@ export function NetworkCalculator() {
               <CardHeader>
                 <CardTitle>Publishers (Reach Share)</CardTitle>
                 <CardDescription>
-                  70% of weekly network cost is split by each app&apos;s share of users reached.
+                  70% of weekly cash spend is split by each app&apos;s share of users reached.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -326,7 +326,7 @@ export function NetworkCalculator() {
             <CardContent className="space-y-4 text-sm text-muted-foreground">
               <p>
                 Publisher payout pool: <span className="font-semibold text-foreground">{formatCurrency(payoutPool)}</span>{' '}
-                ({formatCurrency(weeklyCost)} * 70%)
+                ({formatCurrency(weeklyCost)} cash spend * 70%)
               </p>
 
               <div className="grid gap-3 md:grid-cols-2">
@@ -364,7 +364,7 @@ export function NetworkCalculator() {
               ) : null}
 
               <p className="text-xs">
-                Distinct users are counted within each app to avoid cross-app tracking.
+                Distinct users are counted within each app to avoid cross-app tracking. Bonus publisher credits are not shown in this simple example.
               </p>
             </CardContent>
           </Card>

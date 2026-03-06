@@ -4,11 +4,14 @@ import type { Database } from '@guild-ads/shared'
 export interface AdminWeeklyNetworkSummary {
   weekStart: string
   networkPriceCents: number
-  confirmedSpendCents: number
+  bookedSpendCents: number
+  cashSpendCents: number
+  creditsSpendCents: number
   purchasedPercentage: number
   advertiserAppCount: number
   publisherAppCount: number
   networkUniqueUsers: number
+  platformReserveCents: number
   publisherPoolCents: number
 }
 
@@ -16,7 +19,9 @@ export interface AdminWeeklyAdvertiser {
   advertiserAppID: string
   advertiserAppName: string
   purchasedPercentage: number
-  spendCents: number
+  bookedSpendCents: number
+  cashSpendCents: number
+  creditsSpendCents: number
   userReach: number
   networkUniqueUsers: number
   actualShareRatio: number
@@ -29,6 +34,7 @@ export interface AdminWeeklyPublisher {
   networkUniqueUsers: number
   shareRatio: number
   duePayoutCents: number
+  bonusCreditCents: number
   convertedCents: number
   payoutStatus: string | null
   holdUntil: string | null
@@ -65,11 +71,14 @@ export async function getAdminWeeklyNetworkSummaries(
     .map((row) => ({
       weekStart: row.week_start,
       networkPriceCents: toNumber(row.network_price_cents),
-      confirmedSpendCents: toNumber(row.confirmed_spend_cents),
+      bookedSpendCents: toNumber(row.booked_spend_cents),
+      cashSpendCents: toNumber(row.cash_spend_cents),
+      creditsSpendCents: toNumber(row.credits_spend_cents),
       purchasedPercentage: toNumber(row.purchased_percentage),
       advertiserAppCount: toNumber(row.advertiser_app_count),
       publisherAppCount: toNumber(row.publisher_app_count),
       networkUniqueUsers: toNumber(row.network_unique_users),
+      platformReserveCents: toNumber(row.platform_reserve_cents),
       publisherPoolCents: toNumber(row.publisher_pool_cents),
     }))
 }
@@ -92,7 +101,9 @@ export async function getAdminWeeklyAdvertiserBreakdown(
       advertiserAppID: row.advertiser_app_id,
       advertiserAppName: row.advertiser_app_name ?? 'Unknown App',
       purchasedPercentage: toNumber(row.purchased_percentage),
-      spendCents: toNumber(row.spend_cents),
+      bookedSpendCents: toNumber(row.booked_spend_cents),
+      cashSpendCents: toNumber(row.cash_spend_cents),
+      creditsSpendCents: toNumber(row.credits_spend_cents),
       userReach: toNumber(row.user_reach),
       networkUniqueUsers: toNumber(row.network_unique_users),
       actualShareRatio: toNumber(row.actual_share_ratio),
@@ -120,6 +131,7 @@ export async function getAdminWeeklyPublisherBreakdown(
       networkUniqueUsers: toNumber(row.network_unique_users),
       shareRatio: toNumber(row.share_ratio),
       duePayoutCents: toNumber(row.due_payout_cents),
+      bonusCreditCents: toNumber(row.bonus_credit_cents),
       convertedCents: toNumber(row.converted_cents),
       payoutStatus: typeof row.payout_status === 'string' ? row.payout_status : null,
       holdUntil: typeof row.hold_until === 'string' ? row.hold_until : null,

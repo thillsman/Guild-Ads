@@ -300,7 +300,7 @@ export function WeekSlotBooking({
           <div>
             <p className="text-sm text-muted-foreground">Network Price</p>
             <p className="text-2xl font-bold">${(basePriceCents / 100).toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">for 100% of impressions</p>
+            <p className="text-xs text-muted-foreground">for 100% of weekly network share</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">7-Day Network Reach</p>
@@ -420,6 +420,9 @@ export function WeekSlotBooking({
             Credits are applied first. Any remainder is paid via Stripe checkout.
           </p>
           <p className="text-xs text-muted-foreground">
+            Credits increase buying power, but publisher cash payouts are funded only by actual cash spend.
+          </p>
+          <p className="text-xs text-muted-foreground">
             Spendable credits: <span className="font-medium text-foreground">${(spendableCreditsCents / 100).toFixed(2)}</span>
           </p>
           {latestCreditsAppliedCents !== null && latestCashDueCents !== null && (
@@ -450,7 +453,8 @@ export function WeekSlotBooking({
               <ul className="space-y-0.5">
                 <li>• If ≥90% sells → price increases 10%</li>
                 <li>• If ≥70% sells → price increases 5%</li>
-                <li>• If &lt;50% sells → price decreases 5%</li>
+                <li>• If 50-69% sells → no change</li>
+                <li>• If 30-49% sells → price decreases 5%</li>
                 <li>• If &lt;30% sells → price decreases 10%</li>
               </ul>
             </div>

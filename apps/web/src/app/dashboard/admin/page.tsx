@@ -72,11 +72,14 @@ function zeroSummary(weekStart: string, networkPriceCents: number): AdminWeeklyN
   return {
     weekStart,
     networkPriceCents,
-    confirmedSpendCents: 0,
+    bookedSpendCents: 0,
+    cashSpendCents: 0,
+    creditsSpendCents: 0,
     purchasedPercentage: 0,
     advertiserAppCount: 0,
     publisherAppCount: 0,
     networkUniqueUsers: 0,
+    platformReserveCents: 0,
     publisherPoolCents: 0,
   }
 }
@@ -90,22 +93,16 @@ function StatCard({ label, value }: { label: string; value: string }) {
   )
 }
 
-function AdvertiserSummaryStats({
-  summary,
-  showCountedUsers = false,
-}: {
-  summary: AdminWeeklyNetworkSummary
-  showCountedUsers?: boolean
-}) {
+function AdvertiserSummaryStats({ summary }: { summary: AdminWeeklyNetworkSummary }) {
   return (
-    <div className={`grid gap-3 sm:grid-cols-2 ${showCountedUsers ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
       <StatCard label="Network Price" value={formatCurrency(summary.networkPriceCents)} />
-      <StatCard label="Confirmed Spend" value={formatCurrency(summary.confirmedSpendCents)} />
+      <StatCard label="Booked Value" value={formatCurrency(summary.bookedSpendCents)} />
+      <StatCard label="Cash Spend" value={formatCurrency(summary.cashSpendCents)} />
+      <StatCard label="Credits Used" value={formatCurrency(summary.creditsSpendCents)} />
       <StatCard label="Sold Share" value={formatWholePercent(summary.purchasedPercentage)} />
-      <StatCard label="Publishers" value={summary.publisherAppCount.toLocaleString()} />
-      {showCountedUsers && (
-        <StatCard label="Counted Users" value={summary.networkUniqueUsers.toLocaleString()} />
-      )}
+      <StatCard label="Platform Reserve" value={formatCurrency(summary.platformReserveCents)} />
+      <StatCard label="Publisher Pool" value={formatCurrency(summary.publisherPoolCents)} />
     </div>
   )
 }
@@ -128,7 +125,9 @@ function AdvertiserTable({
           <tr className="border-b text-left text-muted-foreground">
             <th className="py-2 pr-3 font-medium">Advertiser</th>
             <th className="py-2 pr-3 font-medium">Bought Share</th>
-            <th className="py-2 pr-3 font-medium">Spend</th>
+            <th className="py-2 pr-3 font-medium">Booked Value</th>
+            <th className="py-2 pr-3 font-medium">Cash Paid</th>
+            <th className="py-2 pr-3 font-medium">Credits Used</th>
             {showDelivery && (
               <>
                 <th className="py-2 pr-3 font-medium">Users Reached</th>
@@ -142,7 +141,9 @@ function AdvertiserTable({
             <tr key={advertiser.advertiserAppID} className="border-b last:border-0">
               <td className="py-2 pr-3 font-medium">{advertiser.advertiserAppName}</td>
               <td className="py-2 pr-3">{formatWholePercent(advertiser.purchasedPercentage)}</td>
-              <td className="py-2 pr-3">{formatCurrency(advertiser.spendCents)}</td>
+              <td className="py-2 pr-3">{formatCurrency(advertiser.bookedSpendCents)}</td>
+              <td className="py-2 pr-3">{formatCurrency(advertiser.cashSpendCents)}</td>
+              <td className="py-2 pr-3">{formatCurrency(advertiser.creditsSpendCents)}</td>
               {showDelivery && (
                 <>
                   <td className="py-2 pr-3">{advertiser.userReach.toLocaleString()}</td>
@@ -177,6 +178,7 @@ function PublisherTable({
             <th className="py-2 pr-3 font-medium">Counted Users</th>
             <th className="py-2 pr-3 font-medium">User Share</th>
             <th className="py-2 pr-3 font-medium">Gross Cut</th>
+            <th className="py-2 pr-3 font-medium">Bonus Credit</th>
             {showStatus && (
               <>
                 <th className="py-2 pr-3 font-medium">Status</th>
@@ -199,6 +201,7 @@ function PublisherTable({
                   </p>
                 )}
               </td>
+              <td className="py-2 pr-3">{formatCurrency(publisher.bonusCreditCents)}</td>
               {showStatus && (
                 <>
                   <td className="py-2 pr-3">
@@ -316,7 +319,7 @@ export default async function AdminPage() {
         <CardHeader>
           <CardTitle>Current Week Advertisers</CardTitle>
           <CardDescription>
-            {formatWeekRange(currentWeekStart)}. Delivery uses weekly counted users from sticky assignments, summed within each publisher app.
+            {formatWeekRange(currentWeekStart)}. Delivery uses weekly counted users from sticky assignments, summed within each publisher app. Booked value includes credits; publisher payouts do not.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -329,11 +332,11 @@ export default async function AdminPage() {
         <CardHeader>
           <CardTitle>Next Week Advertisers</CardTitle>
           <CardDescription>
-            {formatWeekRange(nextWeekStart)}. Confirmed bookings only.
+            {formatWeekRange(nextWeekStart)}. Confirmed bookings only. Price is locked from the current week&apos;s sold share.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <AdvertiserSummaryStats summary={nextWeekSummary} showCountedUsers />
+          <AdvertiserSummaryStats summary={nextWeekSummary} />
           <AdvertiserTable advertisers={nextWeekAdvertisers} showDelivery={false} />
         </CardContent>
       </Card>
@@ -344,11 +347,13 @@ export default async function AdminPage() {
         <CardHeader>
           <CardTitle>Current Week Publishers</CardTitle>
           <CardDescription>
-            {formatWeekRange(currentWeekStart)}. User share and gross cut use the same weekly counted-user basis as publisher payout accrual.
+            {formatWeekRange(currentWeekStart)}. User share and gross cut use the same weekly counted-user basis as publisher payout accrual. Gross cut is funded from cash advertiser spend only.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <StatCard label="Cash Spend" value={formatCurrency(currentWeekSummary.cashSpendCents)} />
+            <StatCard label="Platform Reserve" value={formatCurrency(currentWeekSummary.platformReserveCents)} />
             <StatCard label="Publisher Pool" value={formatCurrency(currentWeekSummary.publisherPoolCents)} />
             <StatCard label="Counted Users" value={currentWeekSummary.networkUniqueUsers.toLocaleString()} />
             <StatCard label="Publishers" value={currentWeekSummary.publisherAppCount.toLocaleString()} />
@@ -371,18 +376,34 @@ export default async function AdminPage() {
               <CardHeader>
                 <CardTitle>{formatWeekRange(summary.weekStart)}</CardTitle>
                 <CardDescription>
-                  Network price {formatCurrency(summary.networkPriceCents)} · publisher pool {formatCurrency(summary.publisherPoolCents)}
+                  Network price {formatCurrency(summary.networkPriceCents)} · publisher pool {formatCurrency(summary.publisherPoolCents)} · platform reserve {formatCurrency(summary.platformReserveCents)}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-8">
                   <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Confirmed Spend</p>
-                    <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.confirmedSpendCents)}</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Booked Value</p>
+                    <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.bookedSpendCents)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Cash Spend</p>
+                    <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.cashSpendCents)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Credits Used</p>
+                    <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.creditsSpendCents)}</p>
                   </div>
                   <div className="rounded-lg bg-muted/40 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Sold Share</p>
                     <p className="mt-1 text-lg font-semibold">{formatWholePercent(summary.purchasedPercentage)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Platform Reserve</p>
+                    <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.platformReserveCents)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Publisher Pool</p>
+                    <p className="mt-1 text-lg font-semibold">{formatCurrency(summary.publisherPoolCents)}</p>
                   </div>
                   <div className="rounded-lg bg-muted/40 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Counted Users</p>

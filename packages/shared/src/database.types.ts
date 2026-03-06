@@ -285,7 +285,9 @@ export type Database = {
       }
       slot_purchases: {
         Row: {
+          cash_paid_cents: number
           campaign_id: string | null
+          credits_applied_cents: number
           created_at: string
           percentage_purchased: number
           price_cents: number
@@ -296,7 +298,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cash_paid_cents?: number
           campaign_id?: string | null
+          credits_applied_cents?: number
           created_at?: string
           percentage_purchased: number
           price_cents: number
@@ -307,7 +311,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cash_paid_cents?: number
           campaign_id?: string | null
+          credits_applied_cents?: number
           created_at?: string
           percentage_purchased?: number
           price_cents?: number
@@ -485,9 +491,11 @@ export type Database = {
           actual_share_ratio: number
           advertiser_app_id: string
           advertiser_app_name: string
+          booked_spend_cents: number
+          cash_spend_cents: number
+          credits_spend_cents: number
           network_unique_users: number
           purchased_percentage: number
-          spend_cents: number
           user_reach: number
         }[]
       }
@@ -495,9 +503,12 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           advertiser_app_count: number
-          confirmed_spend_cents: number
+          booked_spend_cents: number
+          cash_spend_cents: number
+          credits_spend_cents: number
           network_price_cents: number
           network_unique_users: number
+          platform_reserve_cents: number
           purchased_percentage: number
           publisher_app_count: number
           publisher_pool_cents: number
@@ -507,6 +518,7 @@ export type Database = {
       get_admin_weekly_publisher_breakdown: {
         Args: { p_week_start: string }
         Returns: {
+          bonus_credit_cents: number
           converted_cents: number
           due_payout_cents: number
           hold_until: string | null
@@ -529,6 +541,10 @@ export type Database = {
           window_end: string
           window_start: string
         }[]
+      }
+      get_weekly_sold_percentage: {
+        Args: { p_week_start: string }
+        Returns: number
       }
       get_next_week_start: { Args: never; Returns: string }
       get_publisher_weekly_placement_metrics: {

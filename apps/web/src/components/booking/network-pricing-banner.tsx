@@ -107,6 +107,9 @@ export function NetworkPricingBanner() {
             <p className="text-sm text-muted-foreground mb-3">
               Weekly pricing across the entire Guild network, based on the last 7 days of publisher reach
             </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Credits can be applied at checkout, but publisher cash payouts come from actual cash spend only.
+            </p>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-1.5">
                 <TrendUp className="h-4 w-4 text-primary" />

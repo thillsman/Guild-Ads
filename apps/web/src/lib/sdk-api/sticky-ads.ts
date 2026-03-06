@@ -20,9 +20,7 @@ interface StickyAdResult {
 interface StickyNoFillResult {
   kind: 'no_fill'
   reason:
-    | 'weighted_no_fill'
     | 'no_inventory'
-    | 'sticky_reassignment_weighted_no_fill'
     | 'sticky_reassignment_no_inventory'
 }
 
@@ -100,9 +98,7 @@ export async function getOrAssignStickyAd(
 
     return {
       kind: 'no_fill',
-      reason: decision.reason === 'weighted_no_fill'
-        ? 'sticky_reassignment_weighted_no_fill'
-        : 'sticky_reassignment_no_inventory',
+      reason: 'sticky_reassignment_no_inventory',
     }
   }
 

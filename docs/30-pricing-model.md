@@ -9,10 +9,12 @@ Guild Ads uses a transparent, weekly slot-based pricing model designed to be fai
 2. **Flat Weekly Rate**: The entire network has a single weekly price (starting at $1,000). Advertisers buy a percentage of that.
 
 3. **Dynamic Adjustment**: Prices automatically adjust based on demand:
-   - If a week sells out → price increases for the next week
-   - If inventory goes unsold → price decreases for the next week
+   - If a locked week sells strongly → price increases for the newly bookable next week
+   - If a locked week undersells → price decreases for the newly bookable next week
 
 4. **Fair Access**: No single advertiser can buy more than 40% of the network in any given week.
+
+5. **Cash Pool Integrity**: Credits increase advertiser buying power, but publisher cash payouts come only from cash advertiser spend.
 
 ## How It Works
 
@@ -32,6 +34,8 @@ Example:
 - Network price: $1,000/week
 - Advertiser buys: 10%
 - Cost: $100
+
+If a week is undersold, delivery is normalized across sold share. That means booked share is a floor, not always a ceiling. For a worked example, see `docs/30-pricing/weekly-economics-proposal.md`.
 
 ### Estimated Reach
 
@@ -55,12 +59,14 @@ Records advertiser bookings:
 - `user_id`: The advertiser
 - `campaign_id`: The campaign to run
 - `percentage_purchased`: 1-40% (capped)
-- `price_cents`: Calculated cost
+- `price_cents`: Total booked value for the week
+- `cash_paid_cents`: Actual cash collected for the booking
+- `credits_applied_cents`: Internal buying power applied to the booking
 - `status`: pending, confirmed, canceled, completed
 
 ## Availability Rules
 
-1. **100% Total**: The network has 100% inventory per week
+1. **100% Total**: The network has 100% bookable inventory per week
 2. **40% Per Advertiser**: No single advertiser can exceed 40%
 3. **First Come, First Served**: Bookings are processed in order
 4. **Confirmed Bookings**: Once confirmed, spots are reserved
@@ -88,7 +94,7 @@ Records advertiser bookings:
 ## API Endpoints
 
 ### GET /api/slots
-Returns current week slot data:
+Returns next-week booking data plus planning placeholders:
 ```json
 {
   "weekStart": "2024-01-14",
@@ -103,7 +109,7 @@ Returns current week slot data:
 
 ## Price Adjustment Algorithm
 
-After each week ends, we adjust the next week's price based on sell-through:
+When a week locks and begins, we adjust the newly bookable next week's price based on sold share:
 
 | Sell-Through | Adjustment | Rationale |
 |--------------|------------|-----------|
@@ -131,7 +137,7 @@ This creates natural price discovery while maintaining stability.
 ## Future Week Pricing
 
 For weeks beyond the next week:
-- The exact price is unknown until the previous week's booking closes
+- The exact price is unknown until the previous week locks and begins
 - We show an **estimated range** of ±10% from the current week's price
 - Example: If current price is $1,000, future weeks show $900 - $1,100 range
 - This helps advertisers plan budgets while being transparent about potential changes

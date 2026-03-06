@@ -1,48 +1,72 @@
 # Rate Card & Pricing
 
-## v1: Posted pricing + scarcity
+## Weekly network pricing
 
-Pricing is a **public rate card** per bundle with limited slot inventory.
+Guild Ads sells one weekly network price for 100% of available weekly share.
 
-### Slot durations
-- 7-day slot (weekly)
-- 24-hour slot (daily)
+- Booking horizon: next week only
+- Max share per advertiser: 40%
+- Initial public network price: $1,000/week
 
-### Example formula for daily slots
-Daily price = (weekly price / 7) × 1.2  
-(Convenience premium for short bookings)
+Advertiser booked value:
 
-## Dynamic repricing (predictable)
+```
+booked_value = weekly_network_price * (percentage_purchased / 100)
+```
 
-Every Monday, adjust the *next-available* slot price per bundle based on sell-through:
+The booked value can be funded by:
 
-- 100% sold out last week → +10%
-- 70–99% sold → +5%
-- 30–69% sold → no change
-- <30% sold → -10%
+- cash paid
+- credits applied
+- or a mix of both
 
-Guardrails:
-- price floor and ceiling per bundle
-- no more than one step per week
-- keep a public changelog of bundle price updates
+## Delivery rule
 
-## Revenue share (publisher payouts)
+If a week has at least one eligible advertiser, Guild Ads normalizes delivery across the sold share.
 
-Two viable v1 options:
+Example:
 
-### Option A: Simple revenue share
-- 80% publisher / 20% network
-- Monthly payouts (with minimum threshold)
-- Lowest operational complexity
+- App A buys 35%
+- App B buys 35%
+- 30% is unsold
 
-### Option B: Cash + credits (bootstrap demand)
-- Publisher earns: 60% cash + 20% credits (convertible after 90 days)
-- Network retains: 20%
-- Credits create a closed-loop marketplace so publishers become advertisers quickly
+Delivered share becomes roughly 50/50 between App A and App B for that week.
 
-## Minimum payout + refunds
-- Set a minimum payout threshold (e.g., $25).
-- Refund policy for advertiser if network fails to deliver eligibility (rare with time-based slots; keep it simple).
+If a request has zero eligible advertisers, Guild Ads returns no-fill.
 
-Related:
-- `docs/30-pricing/credits.md`
+## Repricing schedule
+
+When a week locks and begins, the newly bookable next week is repriced from that locked week’s sold share.
+
+- `>= 90%` sold: `+10%`
+- `>= 70%` sold: `+5%`
+- `50-69%` sold: no change
+- `30-49%` sold: `-5%`
+- `< 30%` sold: `-10%`
+
+## Publisher payout rule
+
+Publisher cash payouts are based on actual cash advertiser spend only.
+
+- Platform reserve: 30% of cash advertiser spend
+- Publisher pool: 70% of cash advertiser spend
+- Allocation basis: each publisher app’s share of weekly counted users
+
+Credits increase advertiser buying power. They do not increase the publisher cash pool.
+
+## Bonus credits
+
+After a week is finalized, publishers receive bonus credits equal to 10% of that week’s gross publisher earnings.
+
+- user-level credits
+- non-transferable
+- non-cash
+- currently non-expiring
+
+## Conversion
+
+Eligible publisher cash earnings can be converted into credits at a 1:1 rate.
+
+- one-way conversion
+- no extra bonus on conversion
+- converted amount is no longer payable as cash

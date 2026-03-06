@@ -13,6 +13,7 @@ interface Props {
 }
 
 interface PublisherWeeklyEarningsRow {
+  bonus_credit_cents: number | string
   week_start: string
   gross_earnings_cents: number | string
   converted_cents: number | string
@@ -70,12 +71,8 @@ function formatDecisionReason(reason: string): string {
       return 'Filled from confirmed fallback inventory'
     case 'fallback_any_status_fill':
       return 'Filled from broad fallback inventory'
-    case 'weighted_no_fill':
-      return 'Expected no-fill from inventory share'
     case 'no_inventory':
       return 'No eligible inventory'
-    case 'sticky_reassignment_weighted_no_fill':
-      return 'Sticky reassignment hit no-fill'
     case 'sticky_reassignment_no_inventory':
       return 'Sticky reassignment found no inventory'
     case 'missing_user_id':
@@ -140,7 +137,7 @@ export default async function AppPublishPage({ params }: Props) {
 
   const { data: rawWeeklyEarnings, error: weeklyEarningsError } = await (supabase as any)
     .from('publisher_weekly_earnings')
-    .select('week_start, gross_earnings_cents, converted_cents, payout_status, hold_until, paid_at')
+    .select('week_start, gross_earnings_cents, bonus_credit_cents, converted_cents, payout_status, hold_until, paid_at')
     .eq('publisher_app_id', id)
     .eq('user_id', user.id)
     .order('week_start', { ascending: false })
@@ -154,6 +151,7 @@ export default async function AppPublishPage({ params }: Props) {
     .filter((row): row is PublisherWeeklyEarningsRow => typeof row.week_start === 'string')
     .map((row) => {
       const gross = toCount(row.gross_earnings_cents)
+      const bonus = toCount(row.bonus_credit_cents)
       const converted = toCount(row.converted_cents)
       return {
         weekStart: row.week_start,
@@ -161,6 +159,7 @@ export default async function AppPublishPage({ params }: Props) {
         holdUntil: row.hold_until,
         paidAt: row.paid_at,
         grossCents: gross,
+        bonusCreditCents: bonus,
         convertedCents: converted,
         netCents: Math.max(0, gross - converted),
       }
@@ -168,6 +167,7 @@ export default async function AppPublishPage({ params }: Props) {
 
   const earningsTotals = weeklyEarnings.reduce((totals, row) => {
     totals.total += row.netCents
+    totals.bonusCredits += row.bonusCreditCents
 
     if (row.payoutStatus === 'paid') {
       totals.paid += row.netCents
@@ -193,6 +193,7 @@ export default async function AppPublishPage({ params }: Props) {
     onHold: 0,
     eligible: 0,
     paid: 0,
+    bonusCredits: 0,
   })
 
   const totalRequests = ((recentServeAttempts ?? []) as RecentServeAttemptRow[]).length
@@ -333,11 +334,15 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
         <CardHeader>
           <CardTitle>Payout Accounting</CardTitle>
           <CardDescription>
-            Weekly accrual, hold, and payout status for this app.
+            Weekly cash earnings, issued bonus credits, hold, and payout status for this app.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-lg bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Bonus Credits</p>
+              <p className="mt-1 text-lg font-semibold">${(earningsTotals.bonusCredits / 100).toFixed(2)}</p>
+            </div>
             <div className="rounded-lg bg-muted/40 p-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Accrued</p>
               <p className="mt-1 text-lg font-semibold">${(earningsTotals.accrued / 100).toFixed(2)}</p>
@@ -369,13 +374,14 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
 
           {weeklyEarnings.length > 0 && (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
+              <table className="w-full min-w-[920px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Week</th>
-                    <th className="py-2 pr-3 font-medium">Gross</th>
+                    <th className="py-2 pr-3 font-medium">Cash Earnings</th>
+                    <th className="py-2 pr-3 font-medium">Bonus Credits</th>
                     <th className="py-2 pr-3 font-medium">Converted</th>
-                    <th className="py-2 pr-3 font-medium">Net Earnings</th>
+                    <th className="py-2 pr-3 font-medium">Net Cash</th>
                     <th className="py-2 pr-3 font-medium">Status</th>
                     <th className="py-2 pr-3 font-medium">Hold Until</th>
                     <th className="py-2 font-medium">Paid At</th>
@@ -386,6 +392,7 @@ GuildAds.configure(token: "YOUR_SDK_TOKEN")`}
                     <tr key={row.weekStart} className="border-b last:border-0">
                       <td className="py-2 pr-3 font-medium">{formatWeekRange(row.weekStart)}</td>
                       <td className="py-2 pr-3">${(row.grossCents / 100).toFixed(2)}</td>
+                      <td className="py-2 pr-3">${(row.bonusCreditCents / 100).toFixed(2)}</td>
                       <td className="py-2 pr-3">${(row.convertedCents / 100).toFixed(2)}</td>
                       <td className="py-2 pr-3">${(row.netCents / 100).toFixed(2)}</td>
                       <td className="py-2 pr-3">{row.payoutStatus}</td>

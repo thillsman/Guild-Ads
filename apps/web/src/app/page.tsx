@@ -40,6 +40,9 @@ export default async function Home() {
             <span className="text-xl font-bold">Guild Ads</span>
           </div>
           <nav className="flex items-center gap-4">
+            <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground">
+              FAQ
+            </Link>
             <Button variant="ghost" asChild>
               <Link href="/login">Login</Link>
             </Button>
@@ -117,7 +120,7 @@ export default async function Home() {
                 <CardHeader>
                   <CardTitle className="text-base">Make money as a publisher</CardTitle>
                   <CardDescription>
-                    Show clean, native-feeling ads in your app and earn weekly payouts from network spend.
+                    Show clean, native-feeling ads in your app and earn weekly payouts from advertiser cash spend.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -186,7 +189,7 @@ export default async function Home() {
                 <Storefront className="h-9 w-9 text-primary" weight="duotone" />
                 <CardTitle className="mt-3 text-lg">4. Weekly Payout Distribution</CardTitle>
                 <CardDescription>
-                  70% of advertiser spend is paid to publishers based on their share of network app-users reached.
+                  70% of advertiser cash spend is paid to publishers based on their share of network app-users reached.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -206,7 +209,7 @@ export default async function Home() {
               <CardContent className="space-y-4 text-sm text-muted-foreground">
                 <p>
                   You buy a share of the network for a week. If you buy <span className="font-semibold text-foreground">30%</span>,
-                  your ad should appear about <span className="font-semibold text-foreground">30%</span> of the time.
+                  your ad should appear at least <span className="font-semibold text-foreground">30%</span> of delivered inventory, and more when a week is undersold.
                 </p>
                 <p>
                   This is designed for indie teams that want predictable exposure without surveillance-style targeting.
@@ -240,12 +243,12 @@ export default async function Home() {
               <ShieldCheck className="h-10 w-10 text-primary" weight="duotone" />
               <CardTitle className="mt-4 text-2xl">Publisher Credits + Bonus</CardTitle>
               <CardDescription className="text-base">
-                Apply publisher payout to future ads and get a limited-time <span className="font-semibold text-foreground">10% bonus</span>.
+                Publishers earn a permanent <span className="font-semibold text-foreground">10% bonus credit</span> after each finalized week.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               <p>
-                This gives indie teams a fast loop: earn from placements, then reinvest in growth across the network.
+                This gives indie teams a fast loop: earn from placements, then reinvest in growth across the network. Publisher cash payouts still come from actual advertiser cash spend.
               </p>
             </CardContent>
           </Card>
@@ -274,6 +277,11 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto max-w-6xl px-4 text-center text-sm text-muted-foreground">
+          <div className="mb-3 flex flex-wrap items-center justify-center gap-4">
+            <Link href="/faq" className="hover:text-foreground">FAQ</Link>
+            <Link href="/terms" className="hover:text-foreground">Terms</Link>
+            <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
+          </div>
           <p>&copy; {new Date().getFullYear()} Guild Ads. Built for indie developers.</p>
         </div>
       </footer>
