@@ -73,7 +73,6 @@ interface WeeklyTotals {
   impressions: number
   viewedUsers: number
   clicks: number
-  uniqueClickUsers: number
 }
 
 interface PlacementMetric {
@@ -87,7 +86,6 @@ interface PlacementMetric {
   impressions: number
   viewedUsers: number
   clicks: number
-  uniqueClickUsers: number
 }
 
 interface DailyStorageMetric {
@@ -197,7 +195,6 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
       impressions: toCount(row.impressions),
       viewedUsers: toCount(row.unique_users),
       clicks: toCount(row.clicks),
-      uniqueClickUsers: toCount(row.unique_click_users),
     }))
     .sort((left, right) => right.weekStart.localeCompare(left.weekStart))
 
@@ -217,8 +214,12 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
       impressions: toCount(row.impressions),
       viewedUsers: toCount(row.unique_users),
       clicks: toCount(row.clicks),
-      uniqueClickUsers: toCount(row.unique_click_users),
     }))
+    .filter((row) => (
+      row.impressions > 0 ||
+      row.viewedUsers > 0 ||
+      row.clicks > 0
+    ))
     .sort((left, right) => {
       const weekComparison = right.weekStart.localeCompare(left.weekStart)
       if (weekComparison !== 0) {
@@ -293,21 +294,14 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Reach users come from all serve attempts. Viewed users and clicks come from impression logs after the ad is actually shown.
-          </p>
           {weeklyTotals.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Week</th>
-                    <th className="py-2 pr-3 font-medium">Reach Users</th>
-                    <th className="py-2 pr-3 font-medium">Filled Serves</th>
-                    <th className="py-2 pr-3 font-medium">No Fill</th>
                     <th className="py-2 pr-3 font-medium">Impressions</th>
                     <th className="py-2 pr-3 font-medium">Viewed Users</th>
-                    <th className="py-2 pr-3 font-medium">Clicked Users</th>
                     <th className="py-2 font-medium">Clicks</th>
                   </tr>
                 </thead>
@@ -315,12 +309,8 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                   {weeklyTotals.map((metric) => (
                     <tr key={metric.weekStart} className="border-b last:border-0">
                       <td className="py-2 pr-3 font-medium">{formatWeekRange(metric.weekStart)}</td>
-                      <td className="py-2 pr-3">{metric.requestUsers.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.filledRequests.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.noFillRequests.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.impressions.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.viewedUsers.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.uniqueClickUsers.toLocaleString()}</td>
                       <td className="py-2">{metric.clicks.toLocaleString()}</td>
                     </tr>
                   ))}
@@ -402,14 +392,10 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
         <CardContent>
           {dailyStorageMetrics.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Day</th>
-                    <th className="py-2 pr-3 font-medium">Serve Attempts</th>
-                    <th className="py-2 pr-3 font-medium">Reach Users</th>
-                    <th className="py-2 pr-3 font-medium">Filled</th>
-                    <th className="py-2 pr-3 font-medium">No Fill</th>
                     <th className="py-2 pr-3 font-medium">Impressions</th>
                     <th className="py-2 pr-3 font-medium">Viewed Users</th>
                     <th className="py-2 font-medium">Clicks</th>
@@ -425,10 +411,6 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                           timeZone: 'UTC',
                         })}
                       </td>
-                      <td className="py-2 pr-3">{metric.serveAttemptRows.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.requestUsers.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.filledServes.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.noFillServes.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.impressions.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.viewedUsers.toLocaleString()}</td>
                       <td className="py-2">{metric.clicks.toLocaleString()}</td>
@@ -453,17 +435,13 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
         <CardContent>
           {placementMetrics.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-sm">
+              <table className="w-full min-w-[700px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-3 font-medium">Week</th>
                     <th className="py-2 pr-3 font-medium">Placement</th>
-                    <th className="py-2 pr-3 font-medium">Reach Users</th>
-                    <th className="py-2 pr-3 font-medium">Filled</th>
-                    <th className="py-2 pr-3 font-medium">No Fill</th>
                     <th className="py-2 pr-3 font-medium">Impressions</th>
                     <th className="py-2 pr-3 font-medium">Viewed Users</th>
-                    <th className="py-2 pr-3 font-medium">Clicked Users</th>
                     <th className="py-2 font-medium">Clicks</th>
                   </tr>
                 </thead>
@@ -472,12 +450,8 @@ export default async function AppPublisherPerformancePage({ params }: Props) {
                     <tr key={`${metric.weekStart}:${metric.placementID}`} className="border-b last:border-0">
                       <td className="py-2 pr-3 font-medium">{formatWeekRange(metric.weekStart)}</td>
                       <td className="py-2 pr-3 font-mono text-xs">{metric.placementID}</td>
-                      <td className="py-2 pr-3">{metric.requestUsers.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.filledRequests.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.noFillRequests.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.impressions.toLocaleString()}</td>
                       <td className="py-2 pr-3">{metric.viewedUsers.toLocaleString()}</td>
-                      <td className="py-2 pr-3">{metric.uniqueClickUsers.toLocaleString()}</td>
                       <td className="py-2">{metric.clicks.toLocaleString()}</td>
                     </tr>
                   ))}

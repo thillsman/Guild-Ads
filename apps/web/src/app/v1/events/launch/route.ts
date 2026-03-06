@@ -41,9 +41,10 @@ export async function POST(request: Request) {
     const ads: Record<string, unknown> = {}
     const deviceIdHash = userID ? hashValue(userID) : null
 
-    const placementsToFetch = prefetchPlacements.length > 0
-      ? prefetchPlacements.filter((p): p is string => typeof p === 'string')
-      : ['default']
+    const placementsToFetch = prefetchPlacements
+      .filter((p): p is string => typeof p === 'string')
+      .map((placementId) => placementId.trim())
+      .filter((placementId) => placementId.length > 0)
     const attemptLogs: Parameters<typeof logServeAttempts>[1] = []
 
     // If we have a device ID, fetch sticky ads for placements.
@@ -157,9 +158,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ads })
   } catch (error) {
     if (publisherApp) {
-      const placementsToLog = prefetchPlacements.length > 0
-        ? prefetchPlacements.filter((p): p is string => typeof p === 'string')
-        : ['default']
+      const placementsToLog = prefetchPlacements
+        .filter((p): p is string => typeof p === 'string')
+        .map((placementId) => placementId.trim())
+        .filter((placementId) => placementId.length > 0)
       const publisherAppId = publisherApp.appId
 
       await logServeAttempts(supabase, placementsToLog.map((placementId) => ({
